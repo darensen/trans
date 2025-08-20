@@ -8,12 +8,33 @@ let slots = [null, null, null, null];
 let clients = [null, null, null, null];
 let winners = [];
 
+let WS_SHARED_SECRET = null;
+async function loadWsSharedSecret() {
+  const addr = process.env.VAULT_ADDR;
+  const token = process.env.VAULT_TOKEN;
+  const path = process.env.VAULT_WS_PATH || 'v1/secret/data/ws';
+  if (process.env.WS_SHARED_SECRET || process.env.WT_SECRET) {
+    WS_SHARED_SECRET = process.env.WS_SHARED_SECRET || process.env.WT_SECRET;
+    return;
+  }
+  if (!addr || !token) return;
+  try {
+    const res = await fetch(`${addr}/${path}`, { headers: { 'X-Vault-Token': token } });
+    if (!res.ok) return;
+    const json = await res.json();
+    WS_SHARED_SECRET = json?.data?.data?.wt_secret || null;
+  } catch {}
+}
+loadWsSharedSecret();
+
 async function saveMatch(player1Id, player2Id, player1Score, player2Score, matchType) {
   try {
+  if (WS_SHARED_SECRET === null) await loadWsSharedSecret();
     const response = await fetch('http://backend:3000/api/matches', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+  'Content-Type': 'application/json',
+  ...(WS_SHARED_SECRET ? { 'X-WS-Token': WS_SHARED_SECRET } : {}),
       },
       body: JSON.stringify({
         player1Id,
@@ -236,7 +257,7 @@ function createPongRoom(playerA, playerB, matchId) {
     }
   }
 
-  // Attente de 4s avant de démarrer la partie
+  // Attente de 3s avant de démarrer la partie
   setTimeout(() => {
     playing = true;
     [playerA, playerB].forEach((ws, i) => {
@@ -267,32 +288,26 @@ wss.on('connection', (ws) => {
       broadcastSlots();
 
       if (slots.every(Boolean)) {
-        // Envoyer le bracket des demi-finales à tous les clients
-        const semifinalBracket = {
+        // Envoyer le bracket initial des demi-finales à tous les clients
+        const initialBracket = {
           semifinals: [
-            { player1: slots[0].displayName, player2: slots[1].displayName },
-            { player1: slots[2].displayName, player2: slots[3].displayName }
+            { player1: slots[0]?.displayName, player2: slots[1]?.displayName },
+            { player1: slots[2]?.displayName, player2: slots[3]?.displayName }
           ],
-          final: {
-            player1: 'Gagnant Demi 1',
-            player2: 'Gagnant Demi 2'
-          }
+          final: null // Pas encore de finale
         };
         
         wss.clients.forEach(client => {
           if (client.readyState === 1) {
             client.send(JSON.stringify({ 
               type: 'tournament_bracket', 
-              bracket: semifinalBracket 
+              bracket: initialBracket 
             }));
           }
         });
         
-        // Délai avant de créer les rooms pour laisser le temps d'afficher le popup
-        setTimeout(() => {
-          createPongRoom(clients[0], clients[1], 1);
-          createPongRoom(clients[2], clients[3], 2);
-        }, 3000);
+        createPongRoom(clients[0], clients[1], 1);
+        createPongRoom(clients[2], clients[3], 2);
       }
     }
   });

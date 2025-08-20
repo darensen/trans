@@ -24,8 +24,8 @@ services:
     ports:
       # - "80:80"        // pour faire plus jolie apres (https://localhost direct)
       # - "443:443"     // pour faire plus jolie apres
-      - "8080:80"
-      - "8443:443"
+      - "0.0.0.0:8080:80"
+      - "0.0.0.0:8443:443"
     depends_on:
       - backend
       - websocket-pong
@@ -70,8 +70,14 @@ services:
     container_name: websocket-pong
     working_dir: /app
     command: ["node", "ws-pong-server.js"]
-    expose:
-      - "8081"
+    ports:
+      - "0.0.0.0:8081:8081"
+    environment:
+      - VAULT_ADDR=http://vault:8200
+      - VAULT_TOKEN=myroot
+      - VAULT_WS_PATH=v1/secret/data/ws
+    depends_on:
+      - vault
     networks:
       - app-network
 
@@ -84,6 +90,12 @@ services:
     command: ["node", "ws-tournament-server.js"]
     expose:
       - "8082"
+    environment:
+      - VAULT_ADDR=http://vault:8200
+      - VAULT_TOKEN=myroot
+      - VAULT_WS_PATH=v1/secret/data/ws
+    depends_on:
+      - vault
     networks:
       - app-network
 

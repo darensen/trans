@@ -31,7 +31,7 @@ export default fp(async (fastify: any) => {
 
   await fastify.register(fastifyJwt, {
     secret: jwtSecret,
-    sign: { expiresIn: '1d' },
+    sign: { expiresIn: '12h' }, // 12 heures au lieu d'1 jour
     cookie: { cookieName: 'token' }
   });
 

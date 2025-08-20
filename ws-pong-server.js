@@ -4,12 +4,33 @@ const wss = new WebSocket.Server({
   host: '0.0.0.0'
 });
 
+let WS_SHARED_SECRET = null;
+async function loadWsSharedSecret() {
+  const addr = process.env.VAULT_ADDR;
+  const token = process.env.VAULT_TOKEN;
+  const path = process.env.VAULT_WS_PATH || 'v1/secret/data/ws';
+  if (process.env.WS_SHARED_SECRET || process.env.WT_SECRET) {
+    WS_SHARED_SECRET = process.env.WS_SHARED_SECRET || process.env.WT_SECRET;
+    return;
+  }
+  if (!addr || !token) return;
+  try {
+    const res = await fetch(`${addr}/${path}`, { headers: { 'X-Vault-Token': token } });
+    if (!res.ok) return;
+    const json = await res.json();
+  WS_SHARED_SECRET = json?.data?.data?.wt_secret || null;
+  } catch {}
+}
+loadWsSharedSecret();
+
 async function saveMatch(player1Id, player2Id, player1Score, player2Score, matchType = 'NORMAL') {
   try {
+  if (WS_SHARED_SECRET === null) await loadWsSharedSecret();
     const response = await fetch('http://backend:3000/api/matches', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...(WS_SHARED_SECRET ? { 'X-WS-Token': WS_SHARED_SECRET } : {}),
       },
       body: JSON.stringify({
         player1Id,

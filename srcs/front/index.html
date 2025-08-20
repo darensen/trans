@@ -5,36 +5,27 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Pong</title>
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
-  
-  <!-- Browser compatibility polyfills -->
+
   <script src="https://polyfill.io/v3/polyfill.min.js?features=es6,Array.prototype.includes,Promise,Object.assign,fetch"></script>
-  
-  <!-- Local compatibility script -->
+
   <script src="compatibility.js"></script>
-  
-  <!-- CSS Framework -->
+
   <script src="https://cdn.tailwindcss.com"></script>
-  
-  <!-- Chart.js with IE11 compatibility -->
+
   <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
-  
-  <!-- Add CSS for older browsers -->
+
   <style>
-    /* Fallbacks for older browsers */
     .flex { display: -webkit-box; display: -webkit-flex; display: -ms-flexbox; display: flex; }
     .flex-col { -webkit-box-orient: vertical; -webkit-box-direction: normal; -webkit-flex-direction: column; -ms-flex-direction: column; flex-direction: column; }
     .justify-center { -webkit-box-pack: center; -webkit-justify-content: center; -ms-flex-pack: center; justify-content: center; }
     .items-center { -webkit-box-align: center; -webkit-align-items: center; -ms-flex-align: center; align-items: center; }
-    
-    /* Grid fallback */
+
     .grid { display: -ms-grid; display: grid; }
     .grid-cols-2 { -ms-grid-columns: 1fr 1fr; grid-template-columns: repeat(2, 1fr); }
-    
-    /* Transform fallbacks */
+
     .transform { -webkit-transform: translateZ(0); transform: translateZ(0); }
     .-translate-x-1\/2 { -webkit-transform: translateX(-50%); transform: translateX(-50%); }
     .-translate-y-1\/2 { -webkit-transform: translateY(-50%); transform: translateY(-50%); }
-    /* Custom scrollbar styles */
     .custom-scrollbar {
       scrollbar-width: thin;
       scrollbar-color: #4a5568 #2d3748;
@@ -75,14 +66,18 @@
           <span>Activer le 2FA</span>
         </label>
         <button class="bg-green-500 text-white px-4 py-2 rounded w-full" type="submit">S'inscrire</button>
+        <div class="flex justify-between mt-3 text-xs">
+          <a href="#" id="legal-notices-link" class="text-blue-500 hover:underline">Mentions légales</a>
+          <a href="#" id="privacy-policy-link" class="text-blue-500 hover:underline">Politiques de confidentialité</a>
+        </div>
     </form>
     <form id="login-form" class="bg-white p-6 rounded shadow-md w-80">
       <h2 class="text-xl mb-4">Pong game</h2>
       <input class="border p-2 w-full mb-2" type="email" id="email" placeholder="Email" required>
       <input class="border p-2 w-full mb-2" type="password" id="password" placeholder="Mot de passe" required>        
       <button class="bg-blue-500 text-white px-4 py-2 rounded w-full" type="submit">Se connecter</button>
-      <button id="show-register" class="text-blue-500">Créer un compte</button>
     </form>
+    <button id="show-register" class="text-white mt-2">Créer un compte</button>
   </div>
 </div>
 <div id="home-section" class="flex w-screen h-screen bg-gray-900 hidden">
@@ -122,13 +117,11 @@
       <div id="game-section" class="relative flex flex-col items-center justify-center h-screen bg-black hidden">
         <h1 class="text-4xl text-whiborder-white mb-4 z-0 text-white">Modes de jeux</h1>
         <div class="flex flex-col items-center z-10">
-          <button id="play-button" class="bg-black text-white rounded p-2 font-bold hover:bg-gray-900 border-2 border-solid border-white w-48">VS IA</button>
           <button id="vs-player" class="bg-black text-white rounded p-2 font-bold hover:bg-gray-900 border-2 border-solid border-white w-48 mt-4">VS Joueur</button>
           <button id="local-game-button" class="bg-black text-white rounded p-2 font-bold hover:bg-gray-900 border-2 border-solid border-white w-48 mt-4">Local (2 joueurs)</button>
           <button id="tournois-button" class="bg-black text-white rounded p-2 font-bold hover:bg-gray-900 border-2 border-solid border-white w-48 mt-4">Tournois</button>
         </div>
       </div>
-      <!-- Canvas du PONG --> 
       <div id="pong-game" class="relative flex flex-col items-center justify-center h-screen hidden">
           <div id="pong-players" class="flex items-center justify-between w-[800px] mb-4 hidden">
             <div class="flex items-center gap-2">
@@ -156,84 +149,13 @@
           <button id="fermer-loser" class="bg-blue-500 text-white px-4 py-2 rounded w-full">Fermer</button>
         </div>
       </div>
-      
-      <!-- Popup d'affichage des matchups du tournoi -->
-      <div id="tournament-matchup-popup" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 hidden">
-        <div class="bg-gray-950 rounded-lg p-8 max-w-4xl w-full mx-4 border border-gray-700">
-          <h2 class="text-3xl text-white font-bold text-center mb-8">Tournoi</h2>
-          <div id="tournament-bracket-display" class="space-y-8">
-            <!-- Demi-finales -->
-            <div class="text-center">
-              <h3 class="text-xl text-white font-semibold mb-6">Demi-finales</h3>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
-                <div class="bg-gray-800 rounded-lg p-6 border border-gray-600">
-                  <div class="text-white font-bold text-lg mb-4">Match 1</div>
-                  <div class="flex items-center justify-between">
-                    <div class="flex items-center">
-                      <img id="semi1-p1-avatar" src="/avatars/default.png" class="w-10 h-10 rounded-full mr-3" alt="Player 1">
-                      <span id="semi1-p1-name" class="text-white font-semibold">Joueur 1</span>
-                    </div>
-                    <span class="text-white font-bold text-xl mx-4">VS</span>
-                    <div class="flex items-center">
-                      <span id="semi1-p2-name" class="text-white font-semibold">Joueur 2</span>
-                      <img id="semi1-p2-avatar" src="/avatars/default.png" class="w-10 h-10 rounded-full ml-3" alt="Player 2">
-                    </div>
-                  </div>
-                </div>
-                
-                <div class="bg-gray-800 rounded-lg p-6 border border-gray-600">
-                  <div class="text-white font-bold text-lg mb-4">Match 2</div>
-                  <div class="flex items-center justify-between">
-                    <div class="flex items-center">
-                      <img id="semi2-p1-avatar" src="/avatars/default.png" class="w-10 h-10 rounded-full mr-3" alt="Player 3">
-                      <span id="semi2-p1-name" class="text-white font-semibold">Joueur 3</span>
-                    </div>
-                    <span class="text-white font-bold text-xl mx-4">VS</span>
-                    <div class="flex items-center">
-                      <span id="semi2-p2-name" class="text-white font-semibold">Joueur 4</span>
-                      <img id="semi2-p2-avatar" src="/avatars/default.png" class="w-10 h-10 rounded-full ml-3" alt="Player 4">
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <!-- Finale (cachée initialement) -->
-            <div id="final-section" class="text-center hidden">
-              <div class="flex justify-center items-center mb-6">
-                <div class="w-32 h-px bg-white"></div>
-                <h3 class="text-xl text-white font-semibold mx-6">FINALE</h3>
-                <div class="w-32 h-px bg-white"></div>
-              </div>
-              
-              <div class="bg-gray-800 rounded-lg p-8 max-w-xl mx-auto border border-gray-600">
-                <div class="text-white font-bold text-lg mb-6">Match Final</div>
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center">
-                    <img id="final-p1-avatar" src="/avatars/default.png" class="w-12 h-12 rounded-full mr-4 border-2 border-white" alt="Finaliste 1">
-                    <span id="final-p1-name" class="text-white font-bold text-lg">Finaliste 1</span>
-                  </div>
-                  <span class="text-white font-bold text-2xl mx-6">VS</span>
-                  <div class="flex items-center">
-                    <span id="final-p2-name" class="text-white font-bold text-lg">Finaliste 2</span>
-                    <img id="final-p2-avatar" src="/avatars/default.png" class="w-12 h-12 rounded-full ml-4 border-2 border-white" alt="Finaliste 2">
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div class="text-center mt-8">
-            <div id="tournament-countdown" class="text-white font-bold text-2xl">
-              Le match commence dans <span id="countdown-timer">3</span> secondes...
-            </div>
-          </div>
-        </div>
-      </div>
-        <!-- page d'accueil -->
       <div id="page-accueil" class="relative flex flex-col items-center justify-center h-screen bg-black/60 backdrop-blur-sm hidden">
         <h1 class="text-5xl text-whiborder-white mb-8 z-10 text-white"> Bienvenue sur Pong <span id="user-name"></span> </h1>
         <canvas id="home-canvas" class="h-52 w-96 border-2 border-solid border-white z-10"></canvas>
+        <div class="absolute bottom-4 flex gap-4 z-10">
+          <a href="#" id="home-legal-notices-link" class="text-white text-sm hover:underline">Mentions légales</a>
+          <a href="#" id="home-privacy-policy-link" class="text-white text-sm hover:underline">Politiques de confidentialité</a>
+        </div>
       </div>
         <div id="user-menu" class="absolute right-4 top-20 bg-black rounded-lg border-2 border-solid border-white p-4 z-50 hidden">
           <ul class="text-white">
@@ -241,7 +163,6 @@
             <li class="mb-2"><a href="#" id="settings-link" class="hover:text-gray-600">Paramètres</a></li>
           </ul>
         </div>
-        <!-- Overlay flou pour le profil -->
         <div id="blur-bg" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40"></div>
         <div id="blurm-bg" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40">
           <div class="flex items-center justify-center h-full">
@@ -253,7 +174,9 @@
             <div class="flex items-center mb-4">
               <h2 class="text-xl text-white font-bold mr-6">Mon profil</h2>
               <button id="profile-tab-info" class="px-4 py-2 text-white bg-blue-600 rounded font-bold mr-2">Profil</button>
-              <button id="profile-tab-history" class="px-4 py-2 text-white bg-gray-800 rounded font-bold">Statistiques</button>
+              <button id="profile-tab-friends" class="px-4 py-2 text-white bg-gray-800 rounded font-bold mr-2">Amis</button>
+              <button id="profile-tab-history" class="px-4 py-2 text-white bg-gray-800 rounded font-bold mr-2">Historique</button>
+              <button id="profile-tab-stats" class="px-4 py-2 text-white bg-gray-800 rounded font-bold">Statistiques</button>
             </div>
             <div id="profile-info-panel" class="mt-4">
               <div class="flex flex-col md:flex-row gap-6">
@@ -273,21 +196,47 @@
                 <div class="md:w-2/3 w-full">
                   <hr class="my-4 md:hidden border-gray-700">
                   <div>
-                    <h3 class="text-lg mb-2 text-white">Mes amis</h3>
-                    <div id="friends-list" class="mb-4"></div>
-                    <h3 class="text-lg mb-2 text-white">Rechercher un utilisateur</h3>
-                    <input class="border p-2 w-full mb-2 bg-gray-800 text-w.hite border-gray-700" type="text" id="search-user-input" placeholder="Pseudo à rechercher">
-                    <button id="search-user-btn" class="bg-gray-700 text-white px-4 py-2 rounded w-full mb-2">Rechercher</button>
-                    <div id="search-user-result" class="mt-2"></div>
-                    <h3 class="text-lg mb-2 text-white">Demandes d'amis reçues</h3>
-                    <div id="friend-requests-list" class="mb-4"></div>
+                    <h3 class="text-lg mb-2 text-white">Confidentialité et données</h3>
+                    <div class="space-y-2">
+                      <button id="anonymize-account-btn" class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded w-full text-sm">
+                        Anonymiser mon compte
+                      </button>
+                      <button id="export-data-btn" class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded w-full text-sm">
+                        Exporter mes données (JSON)
+                      </button>
+                      <button id="delete-account-btn" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded w-full text-sm">
+                        Supprimer mon compte
+                      </button>
+                      <p class="text-xs text-gray-400">
+                        L'anonymisation remplacera vos données personnelles par des identifiants anonymes tout en conservant vos statistiques de jeu.
+                      </p>
+                    </div>
                   </div>
+                </div>
+              </div>
+            </div>
+            <div id="profile-friends-panel" class="mt-4 hidden max-h-96 overflow-y-auto custom-scrollbar">
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div>
+                  <h4 class="text-md mb-2 text-white">Mes amis</h4>
+                  <div id="friends-list" class="mb-4 max-h-64 overflow-y-auto custom-scrollbar"></div>
+                </div>
+                <div>
+                  <h4 class="text-md mb-2 text-white">Rechercher un utilisateur</h4>
+                  <input class="border p-2 w-full mb-2 bg-gray-800 text-white border-gray-700" type="text" id="search-user-input" placeholder="Pseudo à rechercher">
+                  <button id="search-user-btn" class="bg-gray-700 text-white px-4 py-2 rounded w-full mb-4">Rechercher</button>
+                  <div id="search-user-result" class="mt-2 mb-4"></div>
+                  
+                  <h4 class="text-md mb-2 text-white">Demandes d'amis reçues</h4>
+                  <div id="friend-requests-list" class="mb-4 max-h-32 overflow-y-auto custom-scrollbar"></div>
                 </div>
               </div>
             </div>
             <div id="profile-history-panel" class="mt-4 hidden max-h-96 overflow-y-auto custom-scrollbar">
               <h3 class="text-lg mb-2 text-white">Historique des parties</h3>
               <div id="profile-history-list" class="mb-4 text-white max-h-64 overflow-y-auto custom-scrollbar"></div>
+            </div>
+            <div id="profile-stats-panel" class="mt-4 hidden max-h-96 overflow-y-auto custom-scrollbar">
               <h3 class="text-lg mb-2 text-white">Statistiques</h3>
               <div id="profile-stats" class="mb-4 text-white">
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -334,7 +283,8 @@
             <div class="flex items-center mb-4">
               <h2 class="text-xl text-white font-bold mr-6">Profil utilisateur</h2>
               <button id="public-profile-tab-info" class="px-4 py-2 text-white bg-blue-600 rounded font-bold mr-2">Profil</button>
-              <button id="public-profile-tab-history" class="px-4 py-2 text-white bg-gray-800 rounded font-bold">Historique</button>
+              <button id="public-profile-tab-history" class="px-4 py-2 text-white bg-gray-800 rounded font-bold mr-2">Historique</button>
+              <button id="public-profile-tab-stats" class="px-4 py-2 text-white bg-gray-800 rounded font-bold">Statistiques</button>
             </div>
             <div id="public-profile-info-panel" class="mt-4">
               <div class="flex flex-col md:flex-row gap-6">
@@ -346,46 +296,6 @@
                 </div>
                 <div class="md:w-2/3 w-full">
                   <hr class="my-4 md:hidden border-gray-700">
-                  <div class="max-h-96 overflow-y-auto custom-scrollbar">
-                    <h3 class="text-lg mb-2 text-white">Statistiques</h3>
-                    <div id="public-profile-stats" class="mb-4 text-white">
-                      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <div class="bg-gray-800 p-4 rounded">
-                          <h4 class="text-lg font-semibold text-white mb-2">Victoires vs Défaites</h4>
-                          <div class="chart-container" style="position: relative; height: 200px;">
-                            <canvas id="publicWinLossChart"></canvas>
-                          </div>
-                        </div>
-                        <div class="bg-gray-800 p-4 rounded">
-                          <h4 class="text-lg font-semibold text-white mb-2">Types de parties</h4>
-                          <div class="chart-container" style="position: relative; height: 200px;">
-                            <canvas id="publicMatchTypesChart"></canvas>
-                          </div>
-                        </div>
-                        <div class="bg-gray-800 p-4 rounded col-span-1 lg:col-span-2">
-                          <h4 class="text-lg font-semibold text-white mb-2">Statistiques générales</h4>
-                          <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-center">
-                            <div class="bg-gray-700 p-3 rounded">
-                              <p class="text-2xl font-bold text-green-400" id="public-total-wins">0</p>
-                              <p class="text-sm text-gray-300">Victoires</p>
-                            </div>
-                            <div class="bg-gray-700 p-3 rounded">
-                              <p class="text-2xl font-bold text-red-400" id="public-total-losses">0</p>
-                              <p class="text-sm text-gray-300">Défaites</p>
-                            </div>
-                            <div class="bg-gray-700 p-3 rounded">
-                              <p class="text-2xl font-bold text-blue-400" id="public-win-rate">0%</p>
-                              <p class="text-sm text-gray-300">Taux victoire</p>
-                            </div>
-                            <div class="bg-gray-700 p-3 rounded">
-                              <p class="text-2xl font-bold text-yellow-400" id="public-total-matches">0</p>
-                              <p class="text-sm text-gray-300">Total parties</p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>
@@ -393,42 +303,168 @@
               <h3 class="text-lg mb-2 text-white">Historique des parties</h3>
               <div id="public-profile-history-list" class="mb-4 text-white max-h-64 overflow-y-auto custom-scrollbar"></div>
             </div>
+            <div id="public-profile-stats-panel" class="mt-4 hidden max-h-96 overflow-y-auto custom-scrollbar">
+              <h3 class="text-lg mb-2 text-white">Statistiques</h3>
+              <div id="public-profile-stats" class="mb-4 text-white">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div class="bg-gray-800 p-4 rounded">
+                    <h4 class="text-lg font-semibold text-white mb-2">Victoires vs Défaites</h4>
+                    <div class="chart-container" style="position: relative; height: 200px;">
+                      <canvas id="publicWinLossChart"></canvas>
+                    </div>
+                  </div>
+                  <div class="bg-gray-800 p-4 rounded">
+                    <h4 class="text-lg font-semibold text-white mb-2">Types de parties</h4>
+                    <div class="chart-container" style="position: relative; height: 200px;">
+                      <canvas id="publicMatchTypesChart"></canvas>
+                    </div>
+                  </div>
+                  <div class="bg-gray-800 p-4 rounded col-span-1 lg:col-span-2">
+                    <h4 class="text-lg font-semibold text-white mb-2">Statistiques générales</h4>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-center">
+                      <div class="bg-gray-700 p-3 rounded">
+                        <p class="text-2xl font-bold text-green-400" id="public-total-wins">0</p>
+                        <p class="text-sm text-gray-300">Victoires</p>
+                      </div>
+                      <div class="bg-gray-700 p-3 rounded">
+                        <p class="text-2xl font-bold text-red-400" id="public-total-losses">0</p>
+                        <p class="text-sm text-gray-300">Défaites</p>
+                      </div>
+                      <div class="bg-gray-700 p-3 rounded">
+                        <p class="text-2xl font-bold text-blue-400" id="public-win-rate">0%</p>
+                        <p class="text-sm text-gray-300">Taux victoire</p>
+                      </div>
+                      <div class="bg-gray-700 p-3 rounded">
+                        <p class="text-2xl font-bold text-yellow-400" id="public-total-matches">0</p>
+                        <p class="text-sm text-gray-300">Total parties</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
             <button id="back-profile-btn" class="mt-4 text-blue-500">Retour à mon profil</button>
           </div>
         </div>
         <div id="tournament-section" class="relative flex flex-col items-center justify-center h-screen bg-black hidden">
           <h2 class="text-2xl text-white font-bold mb-6">Tournoi 4 joueurs</h2>
-          
-          <!-- Slots pour rejoindre le tournoi -->
-          <div id="tournament-slots" class="flex justify-between w-full max-w-4xl mb-6">
+          <div id="tournament-bracket" class="flex justify-between w-full max-w-4xl mb-6">
             <div class="flex flex-col items-center">
-              <div class="w-32 h-16 bg-gray-800 rounded flex items-center justify-center text-white mb-2" id="slot-1">Slot 1</div>
+              <div class="w-32 h-16 bg-gray-800 rounded flex items-center justify-center text-white mb-2" id="slot-1">Joueur 1</div>
               <button class="join-tournament-btn bg-blue-500 text-white px-4 py-2 rounded" data-slot="1">Rejoindre</button>
             </div>
             <div class="flex flex-col items-center">
-              <div class="w-32 h-16 bg-gray-800 rounded flex items-center justify-center text-white mb-2" id="slot-2">Slot 2</div>
+              <div class="w-32 h-16 bg-gray-800 rounded flex items-center justify-center text-white mb-2" id="slot-2">Joueur 2</div>
               <button class="join-tournament-btn bg-blue-500 text-white px-4 py-2 rounded" data-slot="2">Rejoindre</button>
             </div>
             <div class="flex flex-col items-center">
-              <div class="w-32 h-16 bg-gray-800 rounded flex items-center justify-center text-white mb-2" id="slot-3">Slot 3</div>
+              <div class="w-32 h-16 bg-gray-800 rounded flex items-center justify-center text-white mb-2" id="slot-3">Joueur 3</div>
               <button class="join-tournament-btn bg-blue-500 text-white px-4 py-2 rounded" data-slot="3">Rejoindre</button>
             </div>
             <div class="flex flex-col items-center">
-              <div class="w-32 h-16 bg-gray-800 rounded flex items-center justify-center text-white mb-2" id="slot-4">Slot 4</div>
+              <div class="w-32 h-16 bg-gray-800 rounded flex items-center justify-center text-white mb-2" id="slot-4">Joueur 4</div>
               <button class="join-tournament-btn bg-blue-500 text-white px-4 py-2 rounded" data-slot="4">Rejoindre</button>
             </div>
           </div>
-          
-          <!-- Bracket du tournoi (affiché quand le tournoi est prêt) -->
-          <div id="tournament-bracket" class="hidden w-full max-w-6xl">
-            <!-- Le bracket sera généré dynamiquement par JavaScript -->
-          </div>
-          
           <button id="close-tournament-btn" class="mt-4 text-blue-400">Fermer</button>
+        </div>
+        <div id="tournament-matchup-popup" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 hidden">
+          <div class="bg-gray-950 rounded-lg p-8 max-w-4xl w-full mx-4 border border-gray-700">
+            <h2 class="text-3xl text-white font-bold text-center mb-8">Tournoi</h2>
+            <div id="tournament-bracket-display" class="space-y-8">
+              <!-- Demi-finales -->
+              <div class="text-center">
+                <h3 class="text-xl text-white font-semibold mb-6">Demi-finales</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+                  <div class="bg-gray-800 rounded-lg p-6 border border-gray-600">
+                    <div class="text-white font-bold text-lg mb-4">Match 1</div>
+                    <div class="flex items-center justify-between">
+                      <div class="flex items-center">
+                        <img id="semi1-p1-avatar" src="/avatars/default.png" class="w-10 h-10 rounded-full mr-3" alt="Player 1">
+                        <span id="semi1-p1-name" class="text-white font-semibold">Joueur 1</span>
+                      </div>
+                      <span class="text-white font-bold text-xl mx-4">VS</span>
+                      <div class="flex items-center">
+                        <span id="semi1-p2-name" class="text-white font-semibold">Joueur 2</span>
+                        <img id="semi1-p2-avatar" src="/avatars/default.png" class="w-10 h-10 rounded-full ml-3" alt="Player 2">
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div class="bg-gray-800 rounded-lg p-6 border border-gray-600">
+                    <div class="text-white font-bold text-lg mb-4">Match 2</div>
+                    <div class="flex items-center justify-between">
+                      <div class="flex items-center">
+                        <img id="semi2-p1-avatar" src="/avatars/default.png" class="w-10 h-10 rounded-full mr-3" alt="Player 3">
+                        <span id="semi2-p1-name" class="text-white font-semibold">Joueur 3</span>
+                      </div>
+                      <span class="text-white font-bold text-xl mx-4">VS</span>
+                      <div class="flex items-center">
+                        <span id="semi2-p2-name" class="text-white font-semibold">Joueur 4</span>
+                        <img id="semi2-p2-avatar" src="/avatars/default.png" class="w-10 h-10 rounded-full ml-3" alt="Player 4">
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Finale (cachée initialement) -->
+              <div id="final-section" class="text-center hidden">
+                <div class="flex justify-center items-center mb-6">
+                  <div class="w-32 h-px bg-white"></div>
+                  <h3 class="text-xl text-white font-semibold mx-6">FINALE</h3>
+                  <div class="w-32 h-px bg-white"></div>
+                </div>
+                
+                <div class="bg-gray-800 rounded-lg p-8 max-w-xl mx-auto border border-gray-600">
+                  <div class="text-white font-bold text-lg mb-6">Match Final</div>
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                      <img id="final-p1-avatar" src="/avatars/default.png" class="w-12 h-12 rounded-full mr-4 border-2 border-white" alt="Finaliste 1">
+                      <span id="final-p1-name" class="text-white font-bold text-lg">Finaliste 1</span>
+                    </div>
+                    <span class="text-white font-bold text-2xl mx-6">VS</span>
+                    <div class="flex items-center">
+                      <span id="final-p2-name" class="text-white font-bold text-lg">Finaliste 2</span>
+                      <img id="final-p2-avatar" src="/avatars/default.png" class="w-12 h-12 rounded-full ml-4 border-2 border-white" alt="Finaliste 2">
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="text-center mt-8">
+              <div id="tournament-countdown" class="text-white font-bold text-2xl">
+                Le match commence dans <span id="countdown-timer">3</span> secondes...
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="legal-notices-section" class="relative flex flex-col items-center justify-center h-screen bg-black hidden p-8">
+          <div class="bg-gray-900 p-6 rounded shadow-md w-full max-w-4xl border border-gray-700 max-h-[80vh] overflow-y-auto custom-scrollbar">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-2xl text-white font-bold">Mentions légales</h2>
+              <button id="close-legal-notices" class="text-blue-400 hover:underline">Fermer</button>
+            </div>
+            <div class="text-white space-y-4">
+              <p>Contenu des mentions légales à définir...</p>
+            </div>
+          </div>
+        </div>
+        <div id="privacy-policy-section" class="relative flex flex-col items-center justify-center h-screen bg-black hidden p-8">
+          <div class="bg-gray-900 p-6 rounded shadow-md w-full max-w-4xl border border-gray-700 max-h-[80vh] overflow-y-auto custom-scrollbar">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-2xl text-white font-bold">Politiques de confidentialité</h2>
+              <button id="close-privacy-policy" class="text-blue-400 hover:underline">Fermer</button>
+            </div>
+            <div class="text-white space-y-4">
+              <p class = "mt-4 text-blue-400">Contenu des politiques de confidentialité à définir...</p>
+            </div>
+          </div>
         </div>
     </div>
 </div>
-<!-- 2FA Modal -->
+<script type="module" src="main.js"></script>
 <div id="twofa-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center">
   <div class="bg-white w-96 max-w-[95vw] rounded shadow-lg p-5">
   <h3 id="twofa-title" class="text-xl font-semibold mb-2">Validation 2FA</h3>
@@ -443,6 +479,5 @@
     </div>
   </div>
 </div>
-<script type="module" src="main.js"></script>
 </body>
 </html>

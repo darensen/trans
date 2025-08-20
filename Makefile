@@ -4,6 +4,9 @@ BACK_DIR=srcs/back
 .PHONY: all front back docker build up clean re
 
 all: front back
+	# Ensure Vault is up, seed dev secrets, then start the full stack
+	docker compose up -d vault
+	bash ./init-vault.sh
 	docker compose up --build
 
 front:

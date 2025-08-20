@@ -1,0 +1,35 @@
+{
+    "name": "posix-argv-parser",
+    "version": "0.4.2",
+    "description": "POSIX compliant command-line argument parser.",
+    "homepage": "http://busterjs.org/docs/posix-argv-parser",
+    "author": { "name": "August Lilleaas" },
+    "contributors": [{
+        "name": "Christian Johansen",
+        "email": "christian@cjohansen.no",
+        "url": "http://cjohansen.no"
+    }, {
+        "name": "August Lilleaas",
+        "email": "august.lilleaas@gmail.com",
+        "url": "http://augustl.com"
+    }, {
+        "name": "Stein Magnus Jodal",
+        "email": "stein.magnus@jodal.no",
+        "url": "http://jodal.no"
+    }],
+    "main": "./lib/posix-argv-parser",
+    "repository": "https://github.com/busterjs/posix-argv-parser.git",
+    "license": {
+        "type": "BSD",
+        "url": "https://github.com/busterjs/posix-argv-parser/blob/master/LICENSE"
+    },
+    "scripts": {
+        "test": "./node_modules/buster/bin/buster-test"
+    },
+    "dependencies": {
+        "when": "https://github.com/cujojs/when/tarball/1.3.0"
+    },
+    "devDependencies": {
+        "buster": "0.6.11"
+    }
+}

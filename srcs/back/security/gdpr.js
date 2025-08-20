@@ -6,6 +6,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 // src/gdpr.ts (backend-local)
 const fastify_plugin_1 = __importDefault(require("fastify-plugin"));
 const client_1 = require("@prisma/client");
+const fs_1 = __importDefault(require("fs"));
+const path_1 = __importDefault(require("path"));
 const prisma = new client_1.PrismaClient();
 exports.default = (0, fastify_plugin_1.default)(async (fastify) => {
     // Export my data
@@ -21,23 +23,50 @@ exports.default = (0, fastify_plugin_1.default)(async (fastify) => {
     // Anonymize my data (keep stats but remove identifiers)
     fastify.post('/api/me/anonymize', { preHandler: fastify.requireAuth }, async (req) => {
         const anonName = `user_${req.user.id}`;
+        // Remove stored avatar file if exists
+        const user = await prisma.user.findUnique({ where: { id: req.user.id }, select: { avatar: true } });
+        if (user?.avatar && user.avatar !== '/avatars/default.png') {
+            const avatarsDir = path_1.default.resolve(process.cwd(), 'srcs/back/avatars');
+            const filePath = path_1.default.join(avatarsDir, path_1.default.basename(user.avatar));
+            try {
+                if (fs_1.default.existsSync(filePath))
+                    fs_1.default.unlinkSync(filePath);
+            }
+            catch { }
+        }
         await prisma.user.update({
             where: { id: req.user.id },
             data: {
                 email: `${anonName}@anonymized.local`,
                 displayName: anonName,
                 avatar: null,
-                anonymizedAt: new Date()
+                anonymizedAt: new Date(),
+                // Optional: reduce sensitive fields
+                totpSecret: null,
+                is2FAEnabled: false
             }
         });
         return { ok: true };
     });
     // Delete my account (soft delete)
-    fastify.delete('/api/me', { preHandler: fastify.requireAuth }, async (req) => {
+    fastify.delete('/api/me', { preHandler: fastify.requireAuth }, async (req, reply) => {
+        // Remove avatar file if present
+        const user = await prisma.user.findUnique({ where: { id: req.user.id }, select: { avatar: true } });
+        if (user?.avatar && user.avatar !== '/avatars/default.png') {
+            const avatarsDir = path_1.default.resolve(process.cwd(), 'srcs/back/avatars');
+            const filePath = path_1.default.join(avatarsDir, path_1.default.basename(user.avatar));
+            try {
+                if (fs_1.default.existsSync(filePath))
+                    fs_1.default.unlinkSync(filePath);
+            }
+            catch { }
+        }
         await prisma.user.update({
             where: { id: req.user.id },
-            data: { deletedAt: new Date() }
+            data: { deletedAt: new Date(), totpSecret: null, is2FAEnabled: false }
         });
+        // Clear auth cookie
+        reply.clearCookie('token', { path: '/' });
         return { ok: true };
     });
 });

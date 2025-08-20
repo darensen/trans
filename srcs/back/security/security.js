@@ -35,7 +35,7 @@ exports.default = (0, fastify_plugin_1.default)(async (fastify) => {
     }
     await fastify.register(jwt_1.default, {
         secret: jwtSecret,
-        sign: { expiresIn: '1d' },
+        sign: { expiresIn: '12h' }, // 12 heures au lieu d'1 jour
         cookie: { cookieName: 'token' }
     });
     fastify.decorate('requireAuth', async (req, reply) => {

@@ -3,7 +3,6 @@ export {}
 const loginForm = document.getElementById('login-form') as HTMLFormElement;
 const registerForm = document.getElementById('register-form') as HTMLFormElement;
 const regEnable2FA = document.getElementById('reg-enable-2fa') as HTMLInputElement | null;
-// 2FA modal elements (shared for registration & login)
 const twofaModal = document.getElementById('twofa-modal') as HTMLDivElement | null;
 const twofaTitle = document.getElementById('twofa-title') as HTMLHeadingElement | null;
 const twofaDesc = document.getElementById('twofa-desc') as HTMLParagraphElement | null;
@@ -35,6 +34,15 @@ const publicProfileEmail = document.getElementById('public-profile-email') as HT
 const publicProfileDisplayName = document.getElementById('public-profile-displayName') as HTMLSpanElement | null;
 const backProfileBtn = document.getElementById('back-profile-btn') as HTMLButtonElement | null;
 const addFriendBtn = document.getElementById('add-friend-btn') as HTMLButtonElement | null;
+const profileTabStats = document.getElementById('profile-tab-stats') as HTMLButtonElement | null;
+const profileStatsPanel = document.getElementById('profile-stats-panel') as HTMLDivElement | null;
+const profileTabFriends = document.getElementById('profile-tab-friends') as HTMLButtonElement | null;
+const profileFriendsPanel = document.getElementById('profile-friends-panel') as HTMLDivElement | null;
+const publicProfileTabStats = document.getElementById('public-profile-tab-stats') as HTMLButtonElement | null;
+const publicProfileStatsPanel = document.getElementById('public-profile-stats-panel') as HTMLDivElement | null;
+const anonymizeAccountBtn = document.getElementById('anonymize-account-btn') as HTMLButtonElement | null;
+const exportDataBtn = document.getElementById('export-data-btn') as HTMLButtonElement | null;
+const deleteAccountBtn = document.getElementById('delete-account-btn') as HTMLButtonElement | null;
 const log_page = document.getElementById('c-page') as HTMLDivElement | null;
 const page_acc = document.getElementById('page-accueil') as HTMLDivElement | null;
 const canvas = document.getElementById('pong') as HTMLCanvasElement;
@@ -42,9 +50,22 @@ const pongpage = document.getElementById('pong-game') as HTMLDivElement | null;
 const bg_blur = document.getElementById('blur-bg') as HTMLDivElement | null;
 const profileHistory = document.getElementById('profile-history') as HTMLDivElement | null;
 const tournamentSection = document.getElementById('tournament-section') as HTMLDivElement | null;
+const tournamentMatchupPopup = document.getElementById('tournament-matchup-popup') as HTMLDivElement | null;
+const tournamentBracketDisplay = document.getElementById('tournament-bracket-display') as HTMLDivElement | null;
+const finalSection = document.getElementById('final-section') as HTMLDivElement | null;
+const tournamentCountdown = document.getElementById('tournament-countdown') as HTMLDivElement | null;
+const countdownTimer = document.getElementById('countdown-timer') as HTMLSpanElement | null;
 const pongPlayers = document.getElementById('pong-players') as HTMLDivElement | null;
 const tournoisBtn = document.getElementById('tournois-button') as HTMLButtonElement | null;
 const localGameBtn = document.getElementById('local-game-button') as HTMLButtonElement | null;
+const legalNoticesSection = document.getElementById('legal-notices-section') as HTMLDivElement | null;
+const privacyPolicySection = document.getElementById('privacy-policy-section') as HTMLDivElement | null;
+const legalNoticesLink = document.getElementById('legal-notices-link') as HTMLAnchorElement | null;
+const privacyPolicyLink = document.getElementById('privacy-policy-link') as HTMLAnchorElement | null;
+const homeLegalNoticesLink = document.getElementById('home-legal-notices-link') as HTMLAnchorElement | null;
+const homePrivacyPolicyLink = document.getElementById('home-privacy-policy-link') as HTMLAnchorElement | null;
+const closeLegalNoticesBtn = document.getElementById('close-legal-notices') as HTMLButtonElement | null;
+const closePrivacyPolicyBtn = document.getElementById('close-privacy-policy') as HTMLButtonElement | null;
 
 let pingInterval: number | undefined;
 let currentPublicUserId: number | null = null;
@@ -52,14 +73,29 @@ let currentPublicUserId: number | null = null;
 // Variable pour tracker si on est en jeu
 let isGameActive = false;
 
-// Variables globales pour les graphiques
 let winLossChart: any = null;
 let matchTypesChart: any = null;
 let publicWinLossChart: any = null;
 let publicMatchTypesChart: any = null;
 
+// Fonctions pour empêcher la navigation
+function preventNavigation(e: BeforeUnloadEvent): string | undefined {
+  if (isGameActive) {
+    e.preventDefault();
+    e.returnValue = 'Une partie est en cours. Êtes-vous sûr de vouloir quitter ?';
+    return e.returnValue;
+  }
+}
+
+function preventBackNavigation(e: PopStateEvent): void {
+  if (isGameActive) {
+    e.preventDefault();
+    window.history.pushState(null, '', window.location.href);
+  }
+}
+
 // Fonction pour bloquer la navigation pendant le jeu
-function lockNavigation() {
+function lockNavigation(): void {
   isGameActive = true;
   
   // Bloquer tous les boutons de navigation
@@ -74,9 +110,9 @@ function lockNavigation() {
   
   navigationButtons.forEach(btn => {
     if (btn) {
-      btn.style.pointerEvents = 'none';
-      btn.style.opacity = '0.5';
-      btn.style.cursor = 'not-allowed';
+      (btn as HTMLElement).style.pointerEvents = 'none';
+      (btn as HTMLElement).style.opacity = '0.5';
+      (btn as HTMLElement).style.cursor = 'not-allowed';
     }
   });
   
@@ -88,9 +124,9 @@ function lockNavigation() {
   
   profileButtons.forEach(btn => {
     if (btn) {
-      btn.style.pointerEvents = 'none';
-      btn.style.opacity = '0.5';
-      btn.style.cursor = 'not-allowed';
+      (btn as HTMLElement).style.pointerEvents = 'none';
+      (btn as HTMLElement).style.opacity = '0.5';
+      (btn as HTMLElement).style.cursor = 'not-allowed';
     }
   });
   
@@ -100,7 +136,7 @@ function lockNavigation() {
 }
 
 // Fonction pour débloquer la navigation après le jeu
-function unlockNavigation() {
+function unlockNavigation(): void {
   isGameActive = false;
   
   // Débloquer tous les boutons de navigation
@@ -115,9 +151,9 @@ function unlockNavigation() {
   
   navigationButtons.forEach(btn => {
     if (btn) {
-      btn.style.pointerEvents = 'auto';
-      btn.style.opacity = '1';
-      btn.style.cursor = 'pointer';
+      (btn as HTMLElement).style.pointerEvents = 'auto';
+      (btn as HTMLElement).style.opacity = '1';
+      (btn as HTMLElement).style.cursor = 'pointer';
     }
   });
   
@@ -129,34 +165,15 @@ function unlockNavigation() {
   
   profileButtons.forEach(btn => {
     if (btn) {
-      btn.style.pointerEvents = 'auto';
-      btn.style.opacity = '1';
-      btn.style.cursor = 'pointer';
+      (btn as HTMLElement).style.pointerEvents = 'auto';
+      (btn as HTMLElement).style.opacity = '1';
+      (btn as HTMLElement).style.cursor = 'pointer';
     }
   });
   
-  // Retirer les listeners de prévention
+  // Retirer les event listeners
   window.removeEventListener('beforeunload', preventNavigation);
   window.removeEventListener('popstate', preventBackNavigation);
-}
-
-// Fonction pour empêcher la fermeture de la page pendant le jeu
-function preventNavigation(e: BeforeUnloadEvent) {
-  if (isGameActive) {
-    e.preventDefault();
-    e.returnValue = 'Une partie est en cours. Êtes-vous sûr de vouloir quitter ?';
-    return 'Une partie est en cours. Êtes-vous sûr de vouloir quitter ?';
-  }
-}
-
-// Fonction pour empêcher la navigation arrière pendant le jeu
-function preventBackNavigation(e: PopStateEvent) {
-  if (isGameActive) {
-    e.preventDefault();
-    alert('Vous ne pouvez pas naviguer pendant une partie en cours !');
-    // Remettre l'état actuel dans l'historique
-    history.pushState({ view: 'game' }, '', '/game');
-  }
 }
 
 pingInterval = window.setInterval(async () => {
@@ -250,12 +267,29 @@ function createMatchTypesChart(ctx: any, normalMatches: number, tournamentMatche
   });
 }
 
-function showView(view: 'login' | 'register' | 'home' | 'game' | 'profile' | 'public-profile' | 'tournament', push = true, publicUser?: any) {
-  // Débloquer la navigation quand on change de vue (sauf si on va vers 'game')
-  if (view !== 'game') {
-    unlockNavigation();
+async function loadUserDataInNavbar() {
+  try {
+    const res = await fetch('/api/me', { credentials: 'include' });
+    if (!res.ok) return;
+    
+    const user = await res.json();
+    const avatarImg = document.getElementById('user-avatar') as HTMLImageElement;
+    if (avatarImg) {
+      const src = user?.avatar ? user.avatar : '/avatars/default.png';
+      avatarImg.src = src + '?t=' + Date.now();
+    }
+    const displayNameSpan = document.getElementById('user-displayName') as HTMLSpanElement;
+    if (displayNameSpan) {
+      displayNameSpan.textContent = user?.displayName || 'Inconnu';
+    }
+  } catch (error) {
+    console.warn('Erreur lors du chargement des données utilisateur pour la navbar:', error);
+    const displayNameSpan = document.getElementById('user-displayName') as HTMLSpanElement;
+    if (displayNameSpan) displayNameSpan.textContent = 'Inconnu';
   }
-  
+}
+
+function showView(view: 'login' | 'register' | 'home' | 'game' | 'profile' | 'public-profile' | 'tournament' | 'legal-notices' | 'privacy-policy', push = true, publicUser?: any) {
   loginForm.classList.add('hidden');
   registerForm.classList.add('hidden');
   homeSection.classList.add('hidden');
@@ -266,6 +300,8 @@ function showView(view: 'login' | 'register' | 'home' | 'game' | 'profile' | 'pu
   publicProfileSection?.classList.add('hidden');
   tournamentSection?.classList.add('hidden');
   pongPlayers?.classList.add('hidden');
+  legalNoticesSection?.classList.add('hidden');
+  privacyPolicySection?.classList.add('hidden');
 
   if (page_acc) page_acc.classList.add('hidden');
   if (log_page) log_page.classList.add('hidden');
@@ -307,6 +343,10 @@ function showView(view: 'login' | 'register' | 'home' | 'game' | 'profile' | 'pu
     homeSection.classList.remove('hidden');
     gameSection.classList.remove('hidden');
     showRegisterBtn.classList.add('hidden');
+    
+    // Charger les données utilisateur pour la navbar
+    loadUserDataInNavbar();
+    addLogoutButton();
     vs_player?.addEventListener('click', () => 
     {
       canvas.classList.add('hidden');
@@ -368,7 +408,10 @@ function showView(view: 'login' | 'register' | 'home' | 'game' | 'profile' | 'pu
             canvas.classList.remove('hidden');
             pongPlayers?.classList.remove('hidden');
             playernumber = data.playernumber;
-            lockNavigation(); // Bloquer la navigation pendant le match en ligne
+            
+            // Verrouiller la navigation pendant le match vs joueur
+            lockNavigation();
+            
             fetch('/api/me', { credentials: 'include' })
               .then(async (res) => (res.ok ? res.json() : null))
               .then((user) => {
@@ -397,14 +440,20 @@ function showView(view: 'login' | 'register' | 'home' | 'game' | 'profile' | 'pu
           } else if (data.type === 'game_state') {
             gameState = data.state;
           } else if (data.type === 'opponent_left') {
+            // Débloquer la navigation
+            unlockNavigation();
+            
             alert('Ton adversaire a quitté la partie.');
             if (animationId) cancelAnimationFrame(animationId);
-            unlockNavigation(); // Débloquer la navigation
             showView('home');
           }
           else if (data.type === 'loser') {
             if (finished) return;
             finished = true;
+            
+            // Débloquer la navigation
+            unlockNavigation();
+            
             let loserpopup = document.getElementById('loser-popup') as HTMLDivElement;
             if (loserpopup) {
               loserpopup.classList.remove('hidden');
@@ -416,7 +465,6 @@ function showView(view: 'login' | 'register' | 'home' | 'game' | 'profile' | 'pu
               if (btnfermer) {
                 btnfermer.addEventListener('click', () => {
                   loserpopup.classList.add('hidden');
-                  unlockNavigation(); // Débloquer la navigation
                   showView('game');
                 });
               }
@@ -425,8 +473,12 @@ function showView(view: 'login' | 'register' | 'home' | 'game' | 'profile' | 'pu
             return;
           }
           else if (data.type === 'winner') {
-            if (finished) return;
+            if (finished) return; 
             finished = true;
+            
+            // Débloquer la navigation
+            unlockNavigation();
+            
             let winnerpopup = document.getElementById('winner-popup') as HTMLDivElement;
             let btnfermer = document.getElementById('fermer') as HTMLButtonElement;
             if (winnerpopup) {
@@ -438,7 +490,6 @@ function showView(view: 'login' | 'register' | 'home' | 'game' | 'profile' | 'pu
               if (btnfermer) {
                 btnfermer.addEventListener('click', () => {
                   winnerpopup.classList.add('hidden');
-                  unlockNavigation(); // Débloquer la navigation
                   showView('game');
                 });
               }
@@ -449,18 +500,12 @@ function showView(view: 'login' | 'register' | 'home' | 'game' | 'profile' | 'pu
         };
         ws.onclose = () => {
           if (animationId) cancelAnimationFrame(animationId);
-          unlockNavigation(); // Débloquer la navigation en cas de déconnexion
         };
 
         function startPongGame() {
           if (!canvas) return;
           const ctx = canvas.getContext('2d');
           if (!ctx) return;
-
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          canvas.width = 800;
-          canvas.height = 400;
-
           let paddleY = 150;
           const paddleH = 80;
           const paddleW = 10;
@@ -529,7 +574,6 @@ function showView(view: 'login' | 'register' | 'home' | 'game' | 'profile' | 'pu
         return;
       }
 
-      // Nettoyer les boutons existants avant d'ajouter le nouveau
       if (pongpage) {
         const existingButtons = pongpage.querySelectorAll('button');
         existingButtons.forEach(btn => btn.remove());
@@ -550,7 +594,6 @@ function showView(view: 'login' | 'register' | 'home' | 'game' | 'profile' | 'pu
         let animationId: number | null = null;
         let finished: boolean = false;
 
-        // Use WSS via Nginx reverse proxy
         ws = new WebSocket(`wss://${location.host}/ws/pong`);
         ws.onopen = () => {
           ws.send(JSON.stringify({ type: 'join_local' }));
@@ -560,14 +603,16 @@ function showView(view: 'login' | 'register' | 'home' | 'game' | 'profile' | 'pu
           const data = JSON.parse(event.data);
           if (data.type === 'local_game_started') {
             canvas.classList.remove('hidden');
-            lockNavigation(); // Bloquer la navigation pendant le jeu local
+            // Verrouiller la navigation pendant le jeu local
+            lockNavigation();
             startLocalPongGame();
           } else if (data.type === 'game_state') {
             gameState = data.state;
           } else if (data.type === 'game_over') {
             if (finished) return;
             finished = true;
-            unlockNavigation(); // Débloquer la navigation
+            // Débloquer la navigation
+            unlockNavigation();
             alert(`Fin de partie ! Score final: ${data.score1} - ${data.score2}. Gagnant: ${data.winner}`);
             showView('game');
           }
@@ -608,8 +653,6 @@ function showView(view: 'login' | 'register' | 'home' | 'game' | 'profile' | 'pu
             ctx.fillText(gameState.score2, canvas.width/2+30, 40);
 
             ctx.font = '14px Arial';
-            // ctx.fillText('Joueur 1: W/S', 20, height - 20);
-            // ctx.fillText('Joueur 2: ↑/↓', width - 120, height - 20);
           }
           
           function gameLoop() {
@@ -660,6 +703,31 @@ function showView(view: 'login' | 'register' | 'home' | 'game' | 'profile' | 'pu
     homeSection.classList.remove('hidden');
     profileSection.classList.remove('hidden');
     showRegisterBtn.classList.add('hidden');
+
+    const tabInfo = document.getElementById('profile-tab-info');
+    const tabFriends = document.getElementById('profile-tab-friends');
+    const tabHistory = document.getElementById('profile-tab-history');
+    const tabStats = document.getElementById('profile-tab-stats');
+    const infoPanel = document.getElementById('profile-info-panel');
+    const friendsPanel = document.getElementById('profile-friends-panel');
+    const historyPanel = document.getElementById('profile-history-panel');
+    const statsPanel = document.getElementById('profile-stats-panel');
+    
+    if (tabInfo && tabFriends && tabHistory && tabStats && infoPanel && friendsPanel && historyPanel && statsPanel) {
+      tabInfo.classList.add('bg-blue-600');
+      tabInfo.classList.remove('bg-gray-800');
+      tabFriends.classList.remove('bg-blue-600');
+      tabFriends.classList.add('bg-gray-800');
+      tabHistory.classList.remove('bg-blue-600');
+      tabHistory.classList.add('bg-gray-800');
+      tabStats.classList.remove('bg-blue-600');
+      tabStats.classList.add('bg-gray-800');
+      infoPanel.classList.remove('hidden');
+      friendsPanel.classList.add('hidden');
+      historyPanel.classList.add('hidden');
+      statsPanel.classList.add('hidden');
+    }
+    
     fetch('/api/me', { credentials: 'include' })
       .then(async (res) => (res.ok ? res.json() : null))
       .then(user => {
@@ -671,19 +739,21 @@ function showView(view: 'login' | 'register' | 'home' | 'game' | 'profile' | 'pu
           profileAvatarImg.src = src + '?t=' + Date.now();
         }
       }
-      renderFriendsList();
-      renderFriendRequests();
-      addLogoutButton();
-      const historyPanel = document.getElementById('profile-history-panel');
-      if (historyPanel && !historyPanel.classList.contains('hidden')) {
-        renderMatchHistory();
+
+      const avatarImg = document.getElementById('user-avatar') as HTMLImageElement;
+      if (avatarImg) {
+        const src = user?.avatar ? user.avatar : '/avatars/default.png';
+        avatarImg.src = src + '?t=' + Date.now();
       }
-      setTimeout(() => {
-        renderMatchHistory();
-      }, 100);
+      const displayNameSpan = document.getElementById('user-displayName') as HTMLSpanElement;
+      if (displayNameSpan) {
+        displayNameSpan.textContent = user?.displayName || 'Inconnu';
+      }
+      
+      addLogoutButton();
     });
   } else if (view === 'public-profile' && publicUser) {
-    currentPublicUserId = publicUser.id; // Stocker l'ID pour utilisation ultérieure
+    currentPublicUserId = publicUser.id;
     homeSection.classList.remove('hidden');
     bg_blur?.classList.remove('hidden');
     if (publicProfileSection) publicProfileSection.classList.remove('hidden');
@@ -693,15 +763,21 @@ function showView(view: 'login' | 'register' | 'home' | 'game' | 'profile' | 'pu
 
     const publicTabInfo = document.getElementById('public-profile-tab-info');
     const publicTabHistory = document.getElementById('public-profile-tab-history');
+    const publicTabStats = document.getElementById('public-profile-tab-stats');
     const publicInfoPanel = document.getElementById('public-profile-info-panel');
     const publicHistoryPanel = document.getElementById('public-profile-history-panel');
+    const publicStatsPanel = document.getElementById('public-profile-stats-panel');
     
-    if (publicTabInfo && publicTabHistory && publicInfoPanel && publicHistoryPanel) {
+    if (publicTabInfo && publicTabHistory && publicTabStats && publicInfoPanel && publicHistoryPanel && publicStatsPanel) {
       publicTabInfo.classList.add('bg-blue-600');
+      publicTabInfo.classList.remove('bg-gray-800');
       publicTabHistory.classList.remove('bg-blue-600');
       publicTabHistory.classList.add('bg-gray-800');
+      publicTabStats.classList.remove('bg-blue-600');
+      publicTabStats.classList.add('bg-gray-800');
       publicInfoPanel.classList.remove('hidden');
       publicHistoryPanel.classList.add('hidden');
+      publicStatsPanel.classList.add('hidden');
     }
 
     let statusDot = document.getElementById('public-profile-status-dot');
@@ -725,10 +801,6 @@ function showView(view: 'login' | 'register' | 'home' | 'game' | 'profile' | 'pu
     }
     statusDot.style.backgroundColor = publicUser.online ? '#22c55e' : '#ef4444';
     statusText.textContent = publicUser.online ? 'en ligne' : 'hors ligne';
-
-    renderPublicProfileStats(publicUser.id);
-    // Charger l'historique dès l'affichage du profil public
-    renderPublicMatchHistory(publicUser.id);
 
     fetch('/api/me', { credentials: 'include' })
       .then(async (res) => (res.ok ? res.json() : null))
@@ -758,7 +830,7 @@ function showView(view: 'login' | 'register' | 'home' | 'game' | 'profile' | 'pu
         }
       });
   } else {
-    currentPublicUserId = null; // Réinitialiser l'ID quand on quitte le profil public
+    currentPublicUserId = null;
     if (addFriendBtn) {
       addFriendBtn.classList.add('hidden');
       addFriendBtn.removeAttribute('data-userid');
@@ -793,15 +865,19 @@ function showView(view: 'login' | 'register' | 'home' | 'game' | 'profile' | 'pu
   if (view === 'tournament') {
     homeSection.classList.remove('hidden');
     tournamentSection?.classList.remove('hidden');
-    resetTournamentDisplay(); // Réinitialiser l'affichage du tournoi
-    for (let i = 1; i <= 4; i++) {
-      const slotDiv = document.getElementById(`slot-${i}`);
-      if (slotDiv) slotDiv.textContent = `Slot ${i}`;
-    }
-    document.querySelectorAll('.join-tournament-btn').forEach(btn => {
-      btn.removeAttribute('disabled');
-      btn.textContent = 'Rejoindre';
-    });
+
+    loadUserDataInNavbar();
+    addLogoutButton();
+    
+    // Réinitialiser les slots du tournoi
+    resetTournamentSlots();
+    
+    return;
+  } else if (view === 'legal-notices') {
+    legalNoticesSection?.classList.remove('hidden');
+    return;
+  } else if (view === 'privacy-policy') {
+    privacyPolicySection?.classList.remove('hidden');
     return;
   }
 }
@@ -833,9 +909,7 @@ registerForm.addEventListener('submit', async (e) => {
     return;
   }
 
-  // If user opted in for 2FA, guide them immediately after account creation
   if (regEnable2FA && regEnable2FA.checked) {
-    // Log user in transparently to allow 2FA setup immediately
     const loginRes = await fetch('/api/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -848,8 +922,6 @@ registerForm.addEventListener('submit', async (e) => {
       (document.getElementById('email') as HTMLInputElement).value = email;
       return;
     }
-
-    // Prompt 2FA setup now (QR + code)
     const verified = await openTwoFAModal({ mode: 'setup' }, async (code) => {
       const r = await fetch('/api/2fa/verify', {
         method: 'POST',
@@ -863,8 +935,6 @@ registerForm.addEventListener('submit', async (e) => {
       }
       return true;
     });
-
-    // Fetch me and go home after flow (whether verified or canceled)
     try {
       const meRes = await fetch('/api/me', { credentials: 'include' });
       if (meRes.ok) {
@@ -900,7 +970,6 @@ loginForm.addEventListener('submit', async (e) => {
 
   let res = await attempt();
 
-  // If server indicates 2FA is needed, open a nice modal to enter code
   if (res.status === 206) {
     const verified = await openTwoFAModal({ mode: 'enter' }, async (code) => {
       res = await attempt(code);
@@ -910,7 +979,6 @@ loginForm.addEventListener('submit', async (e) => {
       return false;
     });
     if (!verified) {
-      // User canceled or verification failed; keep on login without generic error
       return;
     }
   }
@@ -930,8 +998,6 @@ loginForm.addEventListener('submit', async (e) => {
       console.log('Connexion réussie - l\'historique sera rechargé automatiquement');
     }
   } catch {}
-
-  // Previously we guided post-login 2FA setup; now setup happens right after registration if chosen.
 
   showView('home');
 });
@@ -1016,8 +1082,6 @@ if (profileForm) {
   });
 }
 
-
-
 if (searchUserBtn && searchUserInput && searchUserResult) {
   searchUserBtn.addEventListener('click', async () => {
     const displayName = searchUserInput.value.trim();
@@ -1058,73 +1122,307 @@ if (backProfileBtn) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  initializeEventListeners();
+});
+
+function initializeEventListeners() {
+  if (showRegisterBtn && !showRegisterBtn.hasAttribute('data-listener-added')) {
+    showRegisterBtn.setAttribute('data-listener-added', 'true');
+    showRegisterBtn.addEventListener('click', () => {
+      showView('register');
+    });
+  }
+
+  if (goGameBtn && !goGameBtn.hasAttribute('data-listener-added')) {
+    goGameBtn.setAttribute('data-listener-added', 'true');
+    goGameBtn.addEventListener('click', () => {
+      showView('game');
+    });
+  }
+
+  if (backHomeBtn && !backHomeBtn.hasAttribute('data-listener-added')) {
+    backHomeBtn.setAttribute('data-listener-added', 'true');
+    backHomeBtn.addEventListener('click', () => {
+      showView('home');
+    });
+  }
+
+  if (goProfileBtn && !goProfileBtn.hasAttribute('data-listener-added')) {
+    goProfileBtn.setAttribute('data-listener-added', 'true');
+    goProfileBtn.addEventListener('click', () => {
+      showView('profile');
+    });
+  }
+
+  if (backHomeProfileBtn && !backHomeProfileBtn.hasAttribute('data-listener-added')) {
+    backHomeProfileBtn.setAttribute('data-listener-added', 'true');
+    backHomeProfileBtn.addEventListener('click', () => {
+      showView('home');
+    });
+  }
+
+  if (backProfileBtn && !backProfileBtn.hasAttribute('data-listener-added')) {
+    backProfileBtn.setAttribute('data-listener-added', 'true');
+    backProfileBtn.addEventListener('click', () => {
+      showView('profile');
+      renderFriendsList();
+    });
+  }
+
   const deleteAvatarBtn = document.getElementById('delete-avatar');
-  if (deleteAvatarBtn) {
+  if (deleteAvatarBtn && !deleteAvatarBtn.hasAttribute('data-listener-added')) {
+    deleteAvatarBtn.setAttribute('data-listener-added', 'true');
     deleteAvatarBtn.addEventListener('click', async () => {
       await fetch('/api/me/avatar', { method: 'DELETE', credentials: 'include' });
       showView('profile', false);
     });
   }
 
-  const tabInfo = document.getElementById('profile-tab-info');
-  const tabHistory = document.getElementById('profile-tab-history');
-  const infoPanel = document.getElementById('profile-info-panel');
-  const historyPanel = document.getElementById('profile-history-panel');
-  if (tabInfo && tabHistory && infoPanel && historyPanel) {
-    tabInfo.addEventListener('click', () => {
-      tabInfo.classList.add('bg-blue-600');
-      tabInfo.classList.remove('bg-gray-800');
-      tabHistory.classList.remove('bg-blue-600');
-      tabHistory.classList.add('bg-gray-800');
-      infoPanel.classList.remove('hidden');
-      historyPanel.classList.add('hidden');
-    });
-    tabHistory.addEventListener('click', () => {
-      tabHistory.classList.add('bg-blue-600');
-      tabHistory.classList.remove('bg-gray-800');
-      tabInfo.classList.remove('bg-blue-600');
-      tabInfo.classList.add('bg-gray-800');
-      infoPanel.classList.add('hidden');
-      historyPanel.classList.remove('hidden');
-      renderMatchHistory();
-    });
-  }
-
-  const publicTabInfo = document.getElementById('public-profile-tab-info');
-  const publicTabHistory = document.getElementById('public-profile-tab-history');
-  const publicInfoPanel = document.getElementById('public-profile-info-panel');
-  const publicHistoryPanel = document.getElementById('public-profile-history-panel');
-  
-  if (publicTabInfo && publicTabHistory && publicInfoPanel && publicHistoryPanel) {
-    publicTabInfo.addEventListener('click', () => {
-      publicTabInfo.classList.add('bg-blue-600');
-      publicTabInfo.classList.remove('bg-gray-800');
-      publicTabHistory.classList.remove('bg-blue-600');
-      publicTabHistory.classList.add('bg-gray-800');
-      publicInfoPanel.classList.remove('hidden');
-      publicHistoryPanel.classList.add('hidden');
-    });
-    
-    publicTabHistory.addEventListener('click', () => {
-      publicTabHistory.classList.add('bg-blue-600');
-      publicTabHistory.classList.remove('bg-gray-800');
-      publicTabInfo.classList.remove('bg-blue-600');
-      publicTabInfo.classList.add('bg-gray-800');
-      publicInfoPanel.classList.add('hidden');
-      publicHistoryPanel.classList.remove('hidden');
-
-      // Utiliser la variable globale pour charger l'historique
-      if (currentPublicUserId) {
-        renderPublicMatchHistory(currentPublicUserId);
+  if (anonymizeAccountBtn && !anonymizeAccountBtn.hasAttribute('data-listener-added')) {
+    anonymizeAccountBtn.setAttribute('data-listener-added', 'true');
+    anonymizeAccountBtn.addEventListener('click', async () => {
+      try {
+        await anonymizeMe();
+        showView('profile', false);
+        loadUserDataInNavbar();
+      } catch (e) {
+        alert('Erreur lors de l\'anonymisation');
       }
     });
   }
-});
+
+  if (exportDataBtn && !exportDataBtn.hasAttribute('data-listener-added')) {
+    exportDataBtn.setAttribute('data-listener-added', 'true');
+    exportDataBtn.addEventListener('click', async () => {
+      try { await exportMe(); } catch { alert('Export impossible'); }
+    });
+  }
+
+  if (deleteAccountBtn && !deleteAccountBtn.hasAttribute('data-listener-added')) {
+    deleteAccountBtn.setAttribute('data-listener-added', 'true');
+    deleteAccountBtn.addEventListener('click', async () => {
+      try {
+        const deleted = await deleteMe();
+        if (deleted) {
+          showView('login');
+        }
+      } catch { alert('Suppression impossible'); }
+    });
+  }
+
+  if (legalNoticesLink && !legalNoticesLink.hasAttribute('data-listener-added')) {
+    legalNoticesLink.setAttribute('data-listener-added', 'true');
+    legalNoticesLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      showView('legal-notices');
+    });
+  }
+
+  if (privacyPolicyLink && !privacyPolicyLink.hasAttribute('data-listener-added')) {
+    privacyPolicyLink.setAttribute('data-listener-added', 'true');
+    privacyPolicyLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      showView('privacy-policy');
+    });
+  }
+
+  if (homeLegalNoticesLink && !homeLegalNoticesLink.hasAttribute('data-listener-added')) {
+    homeLegalNoticesLink.setAttribute('data-listener-added', 'true');
+    homeLegalNoticesLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      showView('legal-notices');
+    });
+  }
+
+  if (homePrivacyPolicyLink && !homePrivacyPolicyLink.hasAttribute('data-listener-added')) {
+    homePrivacyPolicyLink.setAttribute('data-listener-added', 'true');
+    homePrivacyPolicyLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      showView('privacy-policy');
+    });
+  }
+
+  if (closeLegalNoticesBtn && !closeLegalNoticesBtn.hasAttribute('data-listener-added')) {
+    closeLegalNoticesBtn.setAttribute('data-listener-added', 'true');
+    closeLegalNoticesBtn.addEventListener('click', () => {
+      const currentPage = log_page?.classList.contains('hidden') ? 'home' : 'register';
+      showView(currentPage);
+    });
+  }
+
+  if (closePrivacyPolicyBtn && !closePrivacyPolicyBtn.hasAttribute('data-listener-added')) {
+    closePrivacyPolicyBtn.setAttribute('data-listener-added', 'true');
+    closePrivacyPolicyBtn.addEventListener('click', () => {
+      const currentPage = log_page?.classList.contains('hidden') ? 'home' : 'register';
+      showView(currentPage);
+    });
+  }
+
+  setupTabListeners();
+  setupPublicTabListeners();
+
+  if (!window.hasOwnProperty('popstateListenerAdded')) {
+    window.addEventListener('popstate', async (event) => {
+      try {
+        const meRes = await fetch('/api/me', { credentials: 'include' });
+        const isAuthenticated = meRes.ok;
+        
+        let targetView = event.state?.view || 'login';
+
+        if (!isAuthenticated && ['home', 'game', 'profile', 'tournament', 'public-profile'].includes(targetView)) {
+          targetView = 'login';
+          history.replaceState({ view: 'login' }, '', '/');
+        }
+        else if (isAuthenticated && ['login', 'register'].includes(targetView)) {
+          targetView = 'home';
+          history.replaceState({ view: 'home' }, '', '/home');
+        }
+        
+        showView(targetView, false);
+      } catch (error) {
+        console.error('Erreur lors de la vérification auth dans popstate:', error);
+        showView('login', false);
+      }
+    });
+    (window as any).popstateListenerAdded = true;
+  }
+
+  console.log('Event listeners initialisés');
+}
+
+function setupTabListeners() {
+  const tabInfo = document.getElementById('profile-tab-info');
+  const tabFriends = document.getElementById('profile-tab-friends');
+  const tabHistory = document.getElementById('profile-tab-history');
+  const tabStats = document.getElementById('profile-tab-stats');
+  const infoPanel = document.getElementById('profile-info-panel');
+  const friendsPanel = document.getElementById('profile-friends-panel');
+  const historyPanel = document.getElementById('profile-history-panel');
+  const statsPanel = document.getElementById('profile-stats-panel');
+  
+  if (tabInfo && tabFriends && tabHistory && tabStats && infoPanel && friendsPanel && historyPanel && statsPanel) {
+    if (!tabInfo.hasAttribute('data-listener-added')) {
+      tabInfo.setAttribute('data-listener-added', 'true');
+      tabInfo.addEventListener('click', () => {
+        setActiveTab('info', { tabInfo, tabFriends, tabHistory, tabStats }, { infoPanel, friendsPanel, historyPanel, statsPanel });
+      });
+    }
+    
+    if (!tabFriends.hasAttribute('data-listener-added')) {
+      tabFriends.setAttribute('data-listener-added', 'true');
+      tabFriends.addEventListener('click', () => {
+        setActiveTab('friends', { tabInfo, tabFriends, tabHistory, tabStats }, { infoPanel, friendsPanel, historyPanel, statsPanel });
+        renderFriendsList();
+        renderFriendRequests();
+      });
+    }
+    
+    if (!tabHistory.hasAttribute('data-listener-added')) {
+      tabHistory.setAttribute('data-listener-added', 'true');
+      tabHistory.addEventListener('click', () => {
+        setActiveTab('history', { tabInfo, tabFriends, tabHistory, tabStats }, { infoPanel, friendsPanel, historyPanel, statsPanel });
+        renderMatchHistory();
+      });
+    }
+    
+    if (!tabStats.hasAttribute('data-listener-added')) {
+      tabStats.setAttribute('data-listener-added', 'true');
+      tabStats.addEventListener('click', () => {
+        setActiveTab('stats', { tabInfo, tabFriends, tabHistory, tabStats }, { infoPanel, friendsPanel, historyPanel, statsPanel });
+        renderStats();
+      });
+    }
+  }
+}
+
+function setupPublicTabListeners() {
+  const publicTabInfo = document.getElementById('public-profile-tab-info');
+  const publicTabHistory = document.getElementById('public-profile-tab-history');
+  const publicTabStats = document.getElementById('public-profile-tab-stats');
+  const publicInfoPanel = document.getElementById('public-profile-info-panel');
+  const publicHistoryPanel = document.getElementById('public-profile-history-panel');
+  const publicStatsPanel = document.getElementById('public-profile-stats-panel');
+  
+  if (publicTabInfo && publicTabHistory && publicTabStats && publicInfoPanel && publicHistoryPanel && publicStatsPanel) {
+    if (!publicTabInfo.hasAttribute('data-listener-added')) {
+      publicTabInfo.setAttribute('data-listener-added', 'true');
+      publicTabInfo.addEventListener('click', () => {
+        setActiveTab('info', { tabInfo: publicTabInfo, tabHistory: publicTabHistory, tabStats: publicTabStats }, 
+                   { infoPanel: publicInfoPanel, historyPanel: publicHistoryPanel, statsPanel: publicStatsPanel });
+      });
+    }
+    
+    if (!publicTabHistory.hasAttribute('data-listener-added')) {
+      publicTabHistory.setAttribute('data-listener-added', 'true');
+      publicTabHistory.addEventListener('click', () => {
+        setActiveTab('history', { tabInfo: publicTabInfo, tabHistory: publicTabHistory, tabStats: publicTabStats }, 
+                   { infoPanel: publicInfoPanel, historyPanel: publicHistoryPanel, statsPanel: publicStatsPanel });
+        if (currentPublicUserId) {
+          renderPublicMatchHistory(currentPublicUserId);
+        }
+      });
+    }
+    
+    if (!publicTabStats.hasAttribute('data-listener-added')) {
+      publicTabStats.setAttribute('data-listener-added', 'true');
+      publicTabStats.addEventListener('click', () => {
+        setActiveTab('stats', { tabInfo: publicTabInfo, tabHistory: publicTabHistory, tabStats: publicTabStats }, 
+                   { infoPanel: publicInfoPanel, historyPanel: publicHistoryPanel, statsPanel: publicStatsPanel });
+        if (currentPublicUserId) {
+          renderPublicProfileStats(currentPublicUserId);
+        }
+      });
+    }
+  }
+}
+
+function setActiveTab(
+  activeTab: 'info' | 'friends' | 'history' | 'stats',
+  tabs: { tabInfo: HTMLElement; tabFriends?: HTMLElement; tabHistory: HTMLElement; tabStats: HTMLElement },
+  panels: { infoPanel: HTMLElement; friendsPanel?: HTMLElement; historyPanel: HTMLElement; statsPanel: HTMLElement }
+) {
+  Object.values(tabs).forEach(tab => {
+    if (tab) {
+      tab.classList.remove('bg-blue-600');
+      tab.classList.add('bg-gray-800');
+    }
+  });
+  
+  Object.values(panels).forEach(panel => {
+    if (panel) {
+      panel.classList.add('hidden');
+    }
+  });
+
+  switch (activeTab) {
+    case 'info':
+      tabs.tabInfo.classList.add('bg-blue-600');
+      tabs.tabInfo.classList.remove('bg-gray-800');
+      panels.infoPanel.classList.remove('hidden');
+      break;
+    case 'friends':
+      if (tabs.tabFriends && panels.friendsPanel) {
+        tabs.tabFriends.classList.add('bg-blue-600');
+        tabs.tabFriends.classList.remove('bg-gray-800');
+        panels.friendsPanel.classList.remove('hidden');
+      }
+      break;
+    case 'history':
+      tabs.tabHistory.classList.add('bg-blue-600');
+      tabs.tabHistory.classList.remove('bg-gray-800');
+      panels.historyPanel.classList.remove('hidden');
+      break;
+    case 'stats':
+      tabs.tabStats.classList.add('bg-blue-600');
+      tabs.tabStats.classList.remove('bg-gray-800');
+      panels.statsPanel.classList.remove('hidden');
+      break;
+  }
+}
 
 async function renderMatchHistory() {
   const historyList = document.getElementById('profile-history-list');
-  const statsDiv = document.getElementById('profile-stats');
-  if (!historyList || !statsDiv) return;
+  if (!historyList) return;
 
   try {
     console.log('Fetching match history...');
@@ -1152,17 +1450,6 @@ async function renderMatchHistory() {
     
     if (matches.length === 0) {
       historyList.textContent = 'Aucune partie jouée pour le moment.';
-      // Nettoyer les graphiques existants s'il n'y a pas de données
-      const totalWinsEl = document.getElementById('total-wins');
-      const totalLossesEl = document.getElementById('total-losses');
-      const winRateEl = document.getElementById('win-rate');
-      const totalMatchesEl = document.getElementById('total-matches');
-      
-      if (totalWinsEl) totalWinsEl.textContent = '0';
-      if (totalLossesEl) totalLossesEl.textContent = '0';
-      if (winRateEl) winRateEl.textContent = '0%';
-      if (totalMatchesEl) totalMatchesEl.textContent = '0';
-      
       return;
     }
 
@@ -1203,6 +1490,26 @@ async function renderMatchHistory() {
       `;
     }).join('');
 
+  } catch (error) {
+    console.error('Erreur lors du chargement de l\'historique:', error);
+    historyList.textContent = 'Erreur lors du chargement de l\'historique.';
+  }
+}
+
+async function renderStats() {
+  const statsDiv = document.getElementById('profile-stats');
+  if (!statsDiv) return;
+
+  try {
+    const res = await fetch('/api/matches/history', { credentials: 'include' });
+    
+    if (!res.ok) {
+      console.error('Erreur lors du chargement des statistiques');
+      return;
+    }
+
+    const matches = await res.json();
+    
     const totalMatches = matches.length;
     const wins = matches.filter((match: any) => match.isWinner).length;
     const losses = totalMatches - wins;
@@ -1210,8 +1517,7 @@ async function renderMatchHistory() {
     
     const tournamentMatches = matches.filter((match: any) => match.matchType.startsWith('TOURNAMENT'));
     const normalMatches = matches.filter((match: any) => match.matchType === 'NORMAL');
-    
-    // Mettre à jour les statistiques textuelles
+
     const totalWinsEl = document.getElementById('total-wins');
     const totalLossesEl = document.getElementById('total-losses');
     const winRateEl = document.getElementById('win-rate');
@@ -1222,13 +1528,10 @@ async function renderMatchHistory() {
     if (winRateEl) winRateEl.textContent = `${winRate}%`;
     if (totalMatchesEl) totalMatchesEl.textContent = totalMatches.toString();
 
-    // Créer les graphiques
     setTimeout(() => {
-      // Détruire les graphiques existants
       if (winLossChart) winLossChart.destroy();
       if (matchTypesChart) matchTypesChart.destroy();
 
-      // Créer les nouveaux graphiques
       const winLossCtx = document.getElementById('winLossChart') as HTMLCanvasElement;
       const matchTypesCtx = document.getElementById('matchTypesChart') as HTMLCanvasElement;
 
@@ -1242,8 +1545,289 @@ async function renderMatchHistory() {
     }, 100);
 
   } catch (error) {
-    console.error('Erreur lors du chargement de l\'historique:', error);
-    historyList.textContent = 'Erreur lors du chargement de l\'historique.';
+    console.error('Erreur lors du chargement des statistiques:', error);
+  }
+}
+
+// Fonction pour mettre à jour l'affichage du bracket de tournoi
+function updateTournamentBracket(data: any) {
+  // Si c'est la finale, on affiche seulement la section finale
+  if (data.matchType === 'TOURNAMENT_FINAL' && data.currentMatch) {
+    const finalp1Name = document.getElementById('final-p1-name');
+    const finalp1Avatar = document.getElementById('final-p1-avatar') as HTMLImageElement;
+    const finalp2Name = document.getElementById('final-p2-name');
+    const finalp2Avatar = document.getElementById('final-p2-avatar') as HTMLImageElement;
+    
+    if (finalp1Name) finalp1Name.textContent = data.currentMatch.player1.displayName;
+    if (finalp1Avatar) finalp1Avatar.src = data.currentMatch.player1.avatar || '/avatars/default.png';
+    if (finalp2Name) finalp2Name.textContent = data.currentMatch.player2.displayName;
+    if (finalp2Avatar) finalp2Avatar.src = data.currentMatch.player2.avatar || '/avatars/default.png';
+    
+    // Afficher la section finale et cacher les demi-finales
+    if (finalSection) {
+      finalSection.classList.remove('hidden');
+      // S'assurer que le titre de la finale est visible et correct
+      const finalTitle = finalSection.querySelector('h3');
+      if (finalTitle) {
+        finalTitle.textContent = ' FINALE ';
+        finalTitle.className = 'text-2xl font-bold text-yellow-400 mb-4';
+      }
+    }
+    
+    // Cacher les demi-finales dans l'affichage
+    const semifinalsSection = document.querySelector('.text-center:has(h3:contains("Demi-finales"))') as HTMLElement;
+    if (semifinalsSection) {
+      semifinalsSection.style.display = 'none';
+    }
+    
+    return;
+  }
+  
+  // Gestion des demi-finales - améliorer l'affichage des noms
+  if (data.currentMatch) {
+    // Mise à jour du match actuel (peut être demi-finale 1 ou 2)
+    if (data.matchType === 'TOURNAMENT_SEMI') {
+      // Déterminer quel match de demi-finale c'est
+      const isMatch1 = data.semifinalNumber === 1 || data.currentMatch.matchNumber === 1;
+      
+      if (isMatch1) {
+        const semi1p1Name = document.getElementById('semi1-p1-name');
+        const semi1p1Avatar = document.getElementById('semi1-p1-avatar') as HTMLImageElement;
+        const semi1p2Name = document.getElementById('semi1-p2-name');
+        const semi1p2Avatar = document.getElementById('semi1-p2-avatar') as HTMLImageElement;
+        
+        if (semi1p1Name) {
+          semi1p1Name.textContent = data.currentMatch.player1.displayName;
+          semi1p1Name.className = 'text-white font-bold text-lg'; // Améliorer la visibilité
+        }
+        if (semi1p1Avatar) semi1p1Avatar.src = data.currentMatch.player1.avatar || '/avatars/default.png';
+        if (semi1p2Name) {
+          semi1p2Name.textContent = data.currentMatch.player2.displayName;
+          semi1p2Name.className = 'text-white font-bold text-lg'; // Améliorer la visibilité
+        }
+        if (semi1p2Avatar) semi1p2Avatar.src = data.currentMatch.player2.avatar || '/avatars/default.png';
+        
+        // Ajouter un indicateur VS entre les joueurs si disponible
+        const vsIndicator1 = document.getElementById('semi1-vs') || document.createElement('div');
+        if (!document.getElementById('semi1-vs')) {
+          vsIndicator1.id = 'semi1-vs';
+          vsIndicator1.className = 'text-red-400 font-bold text-xl mx-2';
+          vsIndicator1.textContent = 'VS';
+          // Insérer entre les deux joueurs s'il y a un conteneur
+          const semi1Container = semi1p1Name?.parentElement?.parentElement;
+          if (semi1Container) {
+            semi1Container.appendChild(vsIndicator1);
+          }
+        }
+      } else {
+        const semi2p1Name = document.getElementById('semi2-p1-name');
+        const semi2p1Avatar = document.getElementById('semi2-p1-avatar') as HTMLImageElement;
+        const semi2p2Name = document.getElementById('semi2-p2-name');
+        const semi2p2Avatar = document.getElementById('semi2-p2-avatar') as HTMLImageElement;
+        
+        if (semi2p1Name) {
+          semi2p1Name.textContent = data.currentMatch.player1.displayName;
+          semi2p1Name.className = 'text-white font-bold text-lg'; // Améliorer la visibilité
+        }
+        if (semi2p1Avatar) semi2p1Avatar.src = data.currentMatch.player1.avatar || '/avatars/default.png';
+        if (semi2p2Name) {
+          semi2p2Name.textContent = data.currentMatch.player2.displayName;
+          semi2p2Name.className = 'text-white font-bold text-lg'; // Améliorer la visibilité
+        }
+        if (semi2p2Avatar) semi2p2Avatar.src = data.currentMatch.player2.avatar || '/avatars/default.png';
+        
+        // Ajouter un indicateur VS entre les joueurs si disponible
+        const vsIndicator2 = document.getElementById('semi2-vs') || document.createElement('div');
+        if (!document.getElementById('semi2-vs')) {
+          vsIndicator2.id = 'semi2-vs';
+          vsIndicator2.className = 'text-red-400 font-bold text-xl mx-2';
+          vsIndicator2.textContent = 'VS';
+          // Insérer entre les deux joueurs s'il y a un conteneur
+          const semi2Container = semi2p1Name?.parentElement?.parentElement;
+          if (semi2Container) {
+            semi2Container.appendChild(vsIndicator2);
+          }
+        }
+      }
+    }
+  }
+  
+  // Données statiques pour les autres matchs si disponibles
+  if (data.semifinalMatch1) {
+    const semi1p1Name = document.getElementById('semi1-p1-name');
+    const semi1p1Avatar = document.getElementById('semi1-p1-avatar') as HTMLImageElement;
+    const semi1p2Name = document.getElementById('semi1-p2-name');
+    const semi1p2Avatar = document.getElementById('semi1-p2-avatar') as HTMLImageElement;
+    
+    if (semi1p1Name) semi1p1Name.textContent = data.semifinalMatch1.player1.displayName;
+    if (semi1p1Avatar) semi1p1Avatar.src = data.semifinalMatch1.player1.avatar || '/avatars/default.png';
+    if (semi1p2Name) semi1p2Name.textContent = data.semifinalMatch1.player2.displayName;
+    if (semi1p2Avatar) semi1p2Avatar.src = data.semifinalMatch1.player2.avatar || '/avatars/default.png';
+  }
+  
+  if (data.semifinalMatch2) {
+    const semi2p1Name = document.getElementById('semi2-p1-name');
+    const semi2p1Avatar = document.getElementById('semi2-p1-avatar') as HTMLImageElement;
+    const semi2p2Name = document.getElementById('semi2-p2-name');
+    const semi2p2Avatar = document.getElementById('semi2-p2-avatar') as HTMLImageElement;
+    
+    if (semi2p1Name) semi2p1Name.textContent = data.semifinalMatch2.player1.displayName;
+    if (semi2p1Avatar) semi2p1Avatar.src = data.semifinalMatch2.player1.avatar || '/avatars/default.png';
+    if (semi2p2Name) semi2p2Name.textContent = data.semifinalMatch2.player2.displayName;
+    if (semi2p2Avatar) semi2p2Avatar.src = data.semifinalMatch2.player2.avatar || '/avatars/default.png';
+  }
+}
+
+// Fonction pour démarrer le compte à rebours du tournoi
+function startTournamentCountdown(seconds: number, onComplete: () => void) {
+  let remaining = seconds;
+  
+  const updateCountdown = () => {
+    const timer = document.getElementById('countdown-timer');
+    if (timer) {
+      timer.textContent = remaining.toString();
+    }
+  };
+  
+  updateCountdown();
+  
+  const interval = setInterval(() => {
+    remaining--;
+    updateCountdown();
+    
+    if (remaining <= 0) {
+      clearInterval(interval);
+      onComplete();
+    }
+  }, 1000);
+}
+
+// Variable globale pour tracker le message temporaire
+let currentTemporaryMessage: HTMLElement | null = null;
+
+// Fonction pour afficher un message temporaire simple
+function showTemporaryMessage(message: string) {
+  // Supprimer le message existant s'il y en a un
+  if (currentTemporaryMessage) {
+    currentTemporaryMessage.remove();
+    currentTemporaryMessage = null;
+  }
+
+  // Créer l'overlay
+  const overlay = document.createElement('div');
+  overlay.id = 'temporary-message-overlay';
+  overlay.className = 'fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50';
+  
+  const messageBox = document.createElement('div');
+  messageBox.className = 'bg-gray-900 p-8 rounded-lg border border-gray-700 text-center max-w-md mx-4';
+  
+  const messageText = document.createElement('h2');
+  messageText.className = 'text-2xl font-bold text-white';
+  messageText.textContent = message;
+  
+  messageBox.appendChild(messageText);
+  overlay.appendChild(messageBox);
+  document.body.appendChild(overlay);
+
+  // Stocker la référence
+  currentTemporaryMessage = overlay;
+}
+
+// Fonction pour afficher le message de victoire du tournoi
+function showTournamentWinnerMessage(winnerName: string) {
+  // Créer l'overlay
+  const overlay = document.createElement('div');
+  overlay.className = 'fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50';
+  
+  const messageContainer = document.createElement('div');
+  messageContainer.className = 'bg-gradient-to-b from-yellow-400 to-yellow-600 text-black p-8 rounded-lg shadow-2xl text-center max-w-lg mx-4 border-4 border-yellow-300';
+  
+  const trophy = document.createElement('div');
+  trophy.className = 'text-6xl mb-4';
+  trophy.textContent = '🏆';
+  
+  const title = document.createElement('h2');
+  title.className = 'text-3xl font-bold mb-4';
+  title.textContent = 'VICTOIRE DU TOURNOI !';
+  
+  const winnerText = document.createElement('p');
+  winnerText.className = 'text-xl font-semibold mb-6';
+  winnerText.textContent = `${winnerName} a gagné le tournoi !`;
+  
+  const closeButton = document.createElement('button');
+  closeButton.className = 'bg-gray-800 hover:bg-gray-700 text-white px-6 py-3 rounded font-bold';
+  closeButton.textContent = 'Retour à l\'accueil';
+  
+  messageContainer.appendChild(trophy);
+  messageContainer.appendChild(title);
+  messageContainer.appendChild(winnerText);
+  messageContainer.appendChild(closeButton);
+  overlay.appendChild(messageContainer);
+  document.body.appendChild(overlay);
+  
+  // Event listener pour fermer et retourner à l'accueil
+  const closeAndGoHome = () => {
+    if (overlay.parentNode) {
+      overlay.parentNode.removeChild(overlay);
+    }
+    showView('home');
+  };
+  
+  closeButton.addEventListener('click', closeAndGoHome);
+  
+  // Permettre de fermer en cliquant sur l'overlay
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) {
+      closeAndGoHome();
+    }
+  });
+  
+  // Fermer automatiquement après 8 secondes
+  setTimeout(() => {
+    closeAndGoHome();
+  }, 8000);
+}
+
+// Fonction pour cacher le message temporaire
+function hideTemporaryMessage() {
+  if (currentTemporaryMessage) {
+    if (currentTemporaryMessage.parentNode) {
+      currentTemporaryMessage.parentNode.removeChild(currentTemporaryMessage);
+    }
+    currentTemporaryMessage = null;
+  }
+}
+
+// Fonction pour réinitialiser les slots du tournoi
+function resetTournamentSlots() {
+  // Réinitialiser le texte des slots
+  for (let i = 1; i <= 4; i++) {
+    const slotDiv = document.getElementById(`slot-${i}`);
+    if (slotDiv) {
+      slotDiv.textContent = `Slot ${i}`;
+    }
+  }
+  
+  // Réactiver et réafficher tous les boutons "Rejoindre"
+  document.querySelectorAll('.join-tournament-btn').forEach(btn => {
+    const button = btn as HTMLButtonElement;
+    button.removeAttribute('disabled');
+    button.textContent = 'Rejoindre';
+    button.style.display = 'block'; // S'assurer que le bouton est visible
+  });
+  
+  // Masquer les sections de bracket et finale si elles sont visibles
+  if (tournamentMatchupPopup) {
+    tournamentMatchupPopup.classList.add('hidden');
+  }
+  if (finalSection) {
+    finalSection.classList.add('hidden');
+  }
+  
+  // Réinitialiser les informations de bracket
+  const semifinalsSection = document.querySelector('.text-center:has(h3:contains("Demi-finales"))') as HTMLElement;
+  if (semifinalsSection) {
+    semifinalsSection.style.display = 'block';
   }
 }
 
@@ -1273,8 +1857,7 @@ async function renderPublicProfileStats(userId: number) {
     
     const tournamentMatches = matches.filter((match: any) => match.matchType.startsWith('TOURNAMENT'));
     const normalMatches = matches.filter((match: any) => match.matchType === 'NORMAL');
-    
-    // Mettre à jour les statistiques textuelles du profil public
+
     const publicTotalWinsEl = document.getElementById('public-total-wins');
     const publicTotalLossesEl = document.getElementById('public-total-losses');
     const publicWinRateEl = document.getElementById('public-win-rate');
@@ -1285,13 +1868,10 @@ async function renderPublicProfileStats(userId: number) {
     if (publicWinRateEl) publicWinRateEl.textContent = `${winRate}%`;
     if (publicTotalMatchesEl) publicTotalMatchesEl.textContent = totalMatches.toString();
 
-    // Créer les graphiques pour le profil public
     setTimeout(() => {
-      // Détruire les graphiques existants
       if (publicWinLossChart) publicWinLossChart.destroy();
       if (publicMatchTypesChart) publicMatchTypesChart.destroy();
 
-      // Créer les nouveaux graphiques
       const publicWinLossCtx = document.getElementById('publicWinLossChart') as HTMLCanvasElement;
       const publicMatchTypesCtx = document.getElementById('publicMatchTypesChart') as HTMLCanvasElement;
 
@@ -1385,296 +1965,6 @@ async function renderPublicMatchHistory(userId: number) {
   }
 }
 
-function displayTournamentMatches(bracketOrSlots: any) {
-  showTournamentMatchupPopup(bracketOrSlots);
-}
-
-async function showTournamentMatchupPopup(bracketOrSlots: any) {
-  const popup = document.getElementById('tournament-matchup-popup');
-  if (!popup) return;
-
-  let bracket: any;
-  
-  // Si c'est un tableau de slots, créer le bracket
-  if (Array.isArray(bracketOrSlots)) {
-    const slots = bracketOrSlots;
-    bracket = {
-      semifinals: [
-        { player1: slots[0], player2: slots[1] },
-        { player1: slots[2], player2: slots[3] }
-      ],
-      final: {
-        player1: 'Gagnant Demi 1',
-        player2: 'Gagnant Demi 2'
-      }
-    };
-  } else {
-    bracket = bracketOrSlots;
-  }
-
-  // Récupérer les informations des joueurs (noms et avatars)
-  const playerInfos = new Map();
-  
-  try {
-    // Pour chaque joueur dans les demi-finales, récupérer ses infos
-    for (const match of bracket.semifinals) {
-      for (const playerName of [match.player1, match.player2]) {
-        if (playerName && !playerInfos.has(playerName)) {
-          try {
-            const res = await fetch(`/api/user/${encodeURIComponent(playerName)}`, { credentials: 'include' });
-            if (res.ok) {
-              const playerData = await res.json();
-              playerInfos.set(playerName, {
-                displayName: playerData.displayName,
-                avatar: playerData.avatar || '/avatars/default.png'
-              });
-            }
-          } catch (e) {
-            // En cas d'erreur, utiliser les valeurs par défaut
-            playerInfos.set(playerName, {
-              displayName: playerName,
-              avatar: '/avatars/default.png'
-            });
-          }
-        }
-      }
-    }
-  } catch (e) {
-    console.error('Erreur lors de la récupération des infos joueurs:', e);
-  }
-
-  // Remplir les demi-finales
-  if (bracket.semifinals && bracket.semifinals.length >= 2) {
-    // Match 1
-    const match1 = bracket.semifinals[0];
-    const p1Info = playerInfos.get(match1.player1) || { displayName: match1.player1, avatar: '/avatars/default.png' };
-    const p2Info = playerInfos.get(match1.player2) || { displayName: match1.player2, avatar: '/avatars/default.png' };
-    
-    const semi1P1Name = document.getElementById('semi1-p1-name');
-    const semi1P1Avatar = document.getElementById('semi1-p1-avatar') as HTMLImageElement;
-    const semi1P2Name = document.getElementById('semi1-p2-name');
-    const semi1P2Avatar = document.getElementById('semi1-p2-avatar') as HTMLImageElement;
-    
-    if (semi1P1Name) semi1P1Name.textContent = p1Info.displayName;
-    if (semi1P1Avatar) semi1P1Avatar.src = p1Info.avatar + '?t=' + Date.now();
-    if (semi1P2Name) semi1P2Name.textContent = p2Info.displayName;
-    if (semi1P2Avatar) semi1P2Avatar.src = p2Info.avatar + '?t=' + Date.now();
-
-    // Match 2
-    const match2 = bracket.semifinals[1];
-    const p3Info = playerInfos.get(match2.player1) || { displayName: match2.player1, avatar: '/avatars/default.png' };
-    const p4Info = playerInfos.get(match2.player2) || { displayName: match2.player2, avatar: '/avatars/default.png' };
-    
-    const semi2P1Name = document.getElementById('semi2-p1-name');
-    const semi2P1Avatar = document.getElementById('semi2-p1-avatar') as HTMLImageElement;
-    const semi2P2Name = document.getElementById('semi2-p2-name');
-    const semi2P2Avatar = document.getElementById('semi2-p2-avatar') as HTMLImageElement;
-    
-    if (semi2P1Name) semi2P1Name.textContent = p3Info.displayName;
-    if (semi2P1Avatar) semi2P1Avatar.src = p3Info.avatar + '?t=' + Date.now();
-    if (semi2P2Name) semi2P2Name.textContent = p4Info.displayName;
-    if (semi2P2Avatar) semi2P2Avatar.src = p4Info.avatar + '?t=' + Date.now();
-  }
-
-  // Gérer l'affichage de la finale
-  const finalSection = document.getElementById('final-section');
-  if (bracket.final && bracket.final.player1 !== 'Gagnant Demi 1') {
-    // La finale a de vrais joueurs
-    if (finalSection) finalSection.classList.remove('hidden');
-    
-    const final1Info = playerInfos.get(bracket.final.player1) || { displayName: bracket.final.player1, avatar: '/avatars/default.png' };
-    const final2Info = playerInfos.get(bracket.final.player2) || { displayName: bracket.final.player2, avatar: '/avatars/default.png' };
-    
-    const finalP1Name = document.getElementById('final-p1-name');
-    const finalP1Avatar = document.getElementById('final-p1-avatar') as HTMLImageElement;
-    const finalP2Name = document.getElementById('final-p2-name');
-    const finalP2Avatar = document.getElementById('final-p2-avatar') as HTMLImageElement;
-    
-    if (finalP1Name) finalP1Name.textContent = final1Info.displayName;
-    if (finalP1Avatar) finalP1Avatar.src = final1Info.avatar + '?t=' + Date.now();
-    if (finalP2Name) finalP2Name.textContent = final2Info.displayName;
-    if (finalP2Avatar) finalP2Avatar.src = final2Info.avatar + '?t=' + Date.now();
-  } else {
-    // Cacher la finale pour l'instant
-    if (finalSection) finalSection.classList.add('hidden');
-  }
-
-  // Afficher le popup
-  popup.classList.remove('hidden');
-  
-  // Démarrer le compte à rebours optimisé - commencer directement sans délai
-  let countdown = 3;
-  const countdownTimer = document.getElementById('countdown-timer');
-  const countdownText = document.getElementById('tournament-countdown');
-  
-  if (countdownTimer) countdownTimer.textContent = countdown.toString();
-  
-  // Premier décompte immédiat
-  setTimeout(() => {
-    countdown--;
-    if (countdownTimer) countdownTimer.textContent = countdown.toString();
-    
-    const interval = setInterval(() => {
-      countdown--;
-      if (countdownTimer) countdownTimer.textContent = countdown.toString();
-      
-      if (countdown <= 0) {
-        clearInterval(interval);
-        popup.classList.add('hidden');
-        // Le serveur démarre le match maintenant
-      }
-    }, 1000);
-  }, 100); // Petit délai pour éviter le décalage
-}
-
-function resetTournamentDisplay() {
-  const bracketDiv = document.getElementById('tournament-bracket');
-  const slotsDiv = document.getElementById('tournament-slots');
-  
-  // Cacher le bracket et réafficher les slots
-  if (bracketDiv) {
-    bracketDiv.classList.add('hidden');
-    bracketDiv.innerHTML = '';
-  }
-  if (slotsDiv) {
-    slotsDiv.classList.remove('hidden');
-  }
-
-  // Réinitialiser tous les slots et boutons
-  for (let i = 1; i <= 4; i++) {
-    const slotDiv = document.getElementById(`slot-${i}`);
-    const joinBtn = document.querySelector(`[data-slot="${i}"]`) as HTMLButtonElement;
-    
-    if (slotDiv) {
-      slotDiv.textContent = `Slot ${i}`;
-    }
-    if (joinBtn) {
-      joinBtn.style.display = 'block';
-      joinBtn.textContent = 'Rejoindre';
-      joinBtn.removeAttribute('disabled');
-    }
-  }
-
-  // Nettoyer les notifications et écrans d'attente
-  const tournamentNotification = document.getElementById('tournament-notification');
-  const championNotification = document.getElementById('champion-notification');
-  const waitingScreen = document.getElementById('waiting-final-screen');
-  const popup = document.getElementById('tournament-matchup-popup');
-
-  if (tournamentNotification) tournamentNotification.classList.add('hidden');
-  if (championNotification) championNotification.classList.add('hidden');
-  if (waitingScreen) waitingScreen.classList.add('hidden');
-  if (popup) popup.classList.add('hidden');
-
-  // Réinitialiser le canvas du tournoi si il existe
-  if (canvas) {
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-    }
-  }
-}
-
-function showWaitingForFinalScreen() {
-  // Masquer toutes les autres sections
-  loginForm.classList.add('hidden');
-  registerForm.classList.add('hidden');
-  homeSection.classList.add('hidden');
-  gameSection.classList.add('hidden');
-  profileSection.classList.add('hidden');
-  pongpage?.classList.add('hidden');
-  bg_blur?.classList.add('hidden');
-  publicProfileSection?.classList.add('hidden');
-  tournamentSection?.classList.add('hidden');
-  pongPlayers?.classList.add('hidden');
-
-  // Créer et afficher l'écran d'attente
-  let waitingScreen = document.getElementById('waiting-final-screen');
-  if (!waitingScreen) {
-    waitingScreen = document.createElement('div');
-    waitingScreen.id = 'waiting-final-screen';
-    waitingScreen.className = 'fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50';
-    waitingScreen.innerHTML = `
-      <div class="text-center p-8 bg-gray-950 rounded-lg border border-gray-700 max-w-2xl">
-        <h1 class="text-3xl font-bold text-green-400 mb-4">SEMI-FINALE GAGNÉE !</h1>
-        <p class="text-xl text-white mb-6">Vous êtes qualifié(e) pour la FINALE !</p>
-        
-        <div class="text-center mb-6">
-          <p class="text-lg text-white mb-4">Attente de l'autre demi-finale...</p>
-          <p class="text-base text-gray-300 mb-4">La finale commencera dès que l'autre match sera terminé</p>
-          <div class="bg-gray-800 rounded-lg p-4 mb-4">
-            <p class="text-white font-semibold">Préparez-vous pour le match de votre vie !</p>
-            <p class="text-sm text-gray-300 mt-2">Conseil : Restez concentré(e) et gérez bien vos angles</p>
-          </div>
-          <p class="text-sm text-gray-400">Navigation bloquée pendant l'attente</p>
-        </div>
-        
-        <p class="text-base text-white">Finale en approche</p>
-      </div>
-    `;
-    document.body.appendChild(waitingScreen);
-  }
-  
-  waitingScreen.classList.remove('hidden');
-  
-  // La navigation reste lockée - elle ne sera débloquée qu'après la finale
-}
-
-function hideWaitingForFinalScreen() {
-  const waitingScreen = document.getElementById('waiting-final-screen');
-  if (waitingScreen) {
-    waitingScreen.classList.add('hidden');
-  }
-}
-
-function showTournamentNotification(isWinner: boolean, score1: number, score2: number, isInFinal: boolean = false) {
-  // Créer une notification simple qui disparaît automatiquement
-  let notification = document.getElementById('tournament-notification');
-  if (!notification) {
-    notification = document.createElement('div');
-    notification.id = 'tournament-notification';
-    notification.className = 'fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50';
-    document.body.appendChild(notification);
-  }
-
-  const textColor = isWinner ? 'text-green-400' : 'text-red-400';
-  const title = isWinner ? 'VICTOIRE !' : 'DÉFAITE';
-  const message = isWinner ? 
-    (isInFinal ? 'Vous êtes CHAMPION DU TOURNOI !' : 'Vous êtes qualifié(e) pour la FINALE !') :
-    'Merci d\'avoir participé au tournoi !';
-
-  notification.innerHTML = `
-    <div class="text-center p-8 bg-gray-950 rounded-lg border border-gray-700 max-w-md">
-      <h1 class="text-3xl font-bold ${textColor} mb-4">${title}</h1>
-      <p class="text-xl text-white mb-4">${message}</p>
-      <div class="text-2xl font-bold text-white mb-4">
-        Score: ${score1} - ${score2}
-      </div>
-      ${isWinner && !isInFinal ? 
-        '<p class="text-lg text-white">Préparez-vous pour la finale...</p>' : 
-        isWinner && isInFinal ? '<p class="text-lg text-white">CHAMPION !</p>' :
-        '<p class="text-lg text-gray-300">Continuez à vous entraîner !</p>'
-      }
-    </div>
-  `;
-
-  notification.classList.remove('hidden');
-
-  // Faire disparaître automatiquement après 3 secondes
-  setTimeout(() => {
-    notification.classList.add('hidden');
-    
-    if (isWinner && !isInFinal) {
-      // Si c'est un gagnant de demi-finale, montrer l'écran d'attente
-      showWaitingForFinalScreen();
-    } else if (!isWinner || isInFinal) {
-      // Si c'est un perdant ou le champion final, débloquer la navigation
-      unlockNavigation();
-      showView('home');
-    }
-  }, 3000);
-}
-
 if (tournamentSection) {
   tournamentSection.addEventListener('click', async (e) => {
     const target = e.target as HTMLElement;
@@ -1682,8 +1972,7 @@ if (tournamentSection) {
       const slot = target.dataset.slot;
       target.textContent = 'En attente...';
       target.setAttribute('disabled', 'true');
-      
-      // Use WSS via Nginx reverse proxy
+
       const ws = new WebSocket(`wss://${location.host}/ws/tournament`);
       let gameWs: WebSocket | null = null;
       let playernumber: number | null = null;
@@ -1693,7 +1982,6 @@ if (tournamentSection) {
       let waitingStart = false;
       let player1Name = 'Joueur 1';
       let player2Name = 'Joueur 2';
-      let isInFinal = false; // Variable pour tracker si on est en finale
 
       ws.onopen = async () => {
         const response = await fetch('/api/me', { credentials: 'include' });
@@ -1739,39 +2027,80 @@ if (tournamentSection) {
               }
             }
           }
-          
-          // Afficher les matchups quand tous les slots sont remplis
-          const allSlotsFilled = data.slots.every((slot: string) => slot && slot.trim() !== '');
-          if (allSlotsFilled && data.slots.length === 4) {
-            displayTournamentMatches(data.slots);
-          }
-        }
-        if (data.type === 'tournament_bracket') {
-          displayTournamentMatches(data.bracket);
-          // Vérifier si c'est le bracket de la finale
-          if (data.bracket.final && data.bracket.final.player1 !== 'Gagnant Demi 1') {
-            isInFinal = true;
-          }
         }
         if (data.type === 'match_found') {
           waitingStart = true;
-          pongpage?.classList.remove('hidden');
-          tournamentSection.classList.add('hidden');
-          gameSection.classList.add('hidden');
+          
+          // Afficher la popup de tournoi avec les informations des joueurs
+          if (tournamentMatchupPopup) {
+            // Mise à jour des informations des joueurs pour les demi-finales
+            updateTournamentBracket(data);
+            tournamentMatchupPopup.classList.remove('hidden');
+            
+            // Vérifier si c'est la finale
+            const isFinal = data.matchType === 'TOURNAMENT_FINAL';
+            
+            // Mettre à jour le texte du compte à rebours avec les noms des joueurs
+            if (tournamentCountdown) {
+              const player1Name = data.currentMatch?.player1?.displayName || 'Joueur 1';
+              const player2Name = data.currentMatch?.player2?.displayName || 'Joueur 2';
+              
+              if (isFinal) {
+                tournamentCountdown.innerHTML = `
+                  <div class="text-yellow-400 font-bold text-3xl mb-4">
+                    🏆 FINALE DU TOURNOI! 🏆
+                  </div>
+                  <div class="text-white font-bold text-2xl mb-4">
+                    ${player1Name} VS ${player2Name}
+                  </div>
+                  <div class="text-white font-bold text-xl">
+                    La finale commence dans <span id="countdown-timer">3</span> secondes...
+                  </div>
+                `;
+              } else {
+                tournamentCountdown.innerHTML = `
+                  <div class="text-blue-400 font-bold text-2xl mb-4">
+                    DEMI-FINALE
+                  </div>
+                  <div class="text-white font-bold text-2xl mb-4">
+                    ${player1Name} VS ${player2Name}
+                  </div>
+                  <div class="text-white font-bold text-xl">
+                    Le match commence dans <span id="countdown-timer">3</span> secondes...
+                  </div>
+                `;
+              }
+            }
+            
+            // Démarrer le compte à rebours
+            startTournamentCountdown(3, () => {
+              // Cacher la popup et commencer le match
+              tournamentMatchupPopup.classList.add('hidden');
+              pongpage?.classList.remove('hidden');
+              tournamentSection.classList.add('hidden');
+              gameSection?.classList.add('hidden');
+              
+              // Verrouiller la navigation pendant le jeu
+              lockNavigation();
+            });
+          } else {
+            pongpage?.classList.remove('hidden');
+            tournamentSection.classList.add('hidden');
+            gameSection?.classList.add('hidden');
+            lockNavigation();
+          }
         }
         if (data.type === 'player_names') {
           player1Name = data.player1Name;
           player2Name = data.player2Name;
         }
         if (data.type === 'start_game') {
-          hideWaitingForFinalScreen(); // Cacher l'écran d'attente si on était en attente
           showView('game');
           pongpage?.classList.remove('hidden');
           bg_blur?.classList.add('hidden');
-          gameSection.classList.add('hidden');
+          gameSection.classList.add("hidden");
           canvas.classList.remove('hidden');
           playernumber = data.playernumber || 1;
-          lockNavigation(); // Bloquer la navigation pendant le jeu
           startPongGame();
         }
         if (data.type === 'game_state') {
@@ -1780,71 +2109,163 @@ if (tournamentSection) {
         if (data.type === 'loser') {
           if (finished) return;
           finished = true;
+          unlockNavigation();
           
-          // Réinitialiser le canvas
-          if (animationId) cancelAnimationFrame(animationId);
-          const ctx = canvas.getContext('2d');
-          if (ctx) {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+          // Vérifier si c'est une demi-finale ou la finale
+          const isCurrentFinal = data.matchType === 'TOURNAMENT_FINAL';
+          
+          if (isCurrentFinal) {
+            // Pour la finale, afficher la popup de défaite normale
+            let loserpopup = document.getElementById('loser-popup') as HTMLDivElement;
+            if (loserpopup) {
+              loserpopup.classList.remove('hidden');
+              const loserScore = document.getElementById('loser-score') as HTMLSpanElement;
+              let btnfermer = document.getElementById('fermer-loser') as HTMLButtonElement;
+              if (loserScore) {
+                loserScore.textContent = `${data.score1} - ${data.score2}`;
+              }
+              if (btnfermer) {
+                btnfermer.addEventListener('click', () => {
+                  loserpopup.classList.add('hidden');
+                  showView('home');
+                });
+              }
+            }
+          } else {
+            // Pour les demi-finales perdants, garder le popup loser
+            let loserpopup = document.getElementById('loser-popup') as HTMLDivElement;
+            if (loserpopup) {
+              loserpopup.classList.remove('hidden');
+              const loserScore = document.getElementById('loser-score') as HTMLSpanElement;
+              let btnfermer = document.getElementById('fermer-loser') as HTMLButtonElement;
+              if (loserScore) {
+                loserScore.textContent = `${data.score1} - ${data.score2}`;
+              }
+              if (btnfermer) {
+                btnfermer.addEventListener('click', () => {
+                  loserpopup.classList.add('hidden');
+                  showView('tournament');
+                });
+              }
+            }
           }
           
-          // Afficher la notification de défaite (elle gère automatiquement la navigation)
-          showTournamentNotification(false, data.score1, data.score2, false);
+          if (animationId) cancelAnimationFrame(animationId);
           return;
         }
         if (data.type === 'winner') {
           if (finished) return;
           finished = true;
+          unlockNavigation();
           
-          // Réinitialiser le canvas
-          if (animationId) cancelAnimationFrame(animationId);
-          const ctx = canvas.getContext('2d');
-          if (ctx) {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+          // Vérifier si c'est une demi-finale ou la finale
+          const isCurrentFinal = data.matchType === 'TOURNAMENT_FINAL';
+          
+          if (isCurrentFinal) {
+            // Pour la finale, afficher la popup de victoire normale
+            let winnerpopup = document.getElementById('winner-popup') as HTMLDivElement;
+            let btnfermer = document.getElementById('fermer') as HTMLButtonElement;
+            if (winnerpopup) {
+              winnerpopup.classList.remove('hidden');
+              const winnerScore = document.getElementById('winner-score') as HTMLSpanElement;
+              if (winnerScore) {
+                winnerScore.textContent = `${data.score1} - ${data.score2}`;
+              }
+              if (btnfermer) {
+                btnfermer.addEventListener('click', () => {
+                winnerpopup.classList.add('hidden');
+                showView('home');
+              });
+            }
+          }
+        } else {
+          // Pour les demi-finales gagnants, afficher un message simple
+          showTemporaryMessage('Bien joué ! Vous avez gagné, veuillez attendre la finale');
+        }
+        
+        if (animationId) cancelAnimationFrame(animationId);
+        return;
+      }
+      if (data.type === 'tournament_winner') {
+        unlockNavigation();
+        
+        // Afficher le message personnalisé au lieu de l'alert
+        showTournamentWinnerMessage(data.displayName);
+        
+        // Réinitialiser complètement les slots du tournoi
+        resetTournamentSlots();
+      }
+      if (data.type === 'tournament_bracket') {
+        // Mettre à jour l'affichage du bracket avec les vrais noms des joueurs
+        console.log('Réception du bracket:', data.bracket);
+        
+        // Mettre à jour les demi-finales
+        if (data.bracket.semifinals) {
+          // Demi-finale 1
+          const semi1p1Name = document.getElementById('semi1-p1-name');
+          const semi1p2Name = document.getElementById('semi1-p2-name');
+          if (semi1p1Name && data.bracket.semifinals[0]) {
+            semi1p1Name.textContent = data.bracket.semifinals[0].player1;
+            semi1p1Name.className = 'text-white font-bold text-lg';
+          }
+          if (semi1p2Name && data.bracket.semifinals[0]) {
+            semi1p2Name.textContent = data.bracket.semifinals[0].player2;
+            semi1p2Name.className = 'text-white font-bold text-lg';
           }
           
-          // Déterminer si c'est une finale (basé sur isInFinal)
-          showTournamentNotification(true, data.score1, data.score2, isInFinal);
-          return;
-        }
-        if (data.type === 'tournament_winner') {
-          // Masquer l'écran d'attente si il était affiché
-          hideWaitingForFinalScreen();
-          
-          // Créer une notification simple pour le champion du tournoi
-          let championNotification = document.getElementById('champion-notification');
-          if (!championNotification) {
-            championNotification = document.createElement('div');
-            championNotification.id = 'champion-notification';
-            championNotification.className = 'fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50';
-            document.body.appendChild(championNotification);
+          // Demi-finale 2
+          const semi2p1Name = document.getElementById('semi2-p1-name');
+          const semi2p2Name = document.getElementById('semi2-p2-name');
+          if (semi2p1Name && data.bracket.semifinals[1]) {
+            semi2p1Name.textContent = data.bracket.semifinals[1].player1;
+            semi2p1Name.className = 'text-white font-bold text-lg';
           }
-
-          championNotification.innerHTML = `
-            <div class="text-center p-12 bg-gray-950 rounded-lg border border-gray-700 max-w-lg">
-              <h1 class="text-4xl font-bold text-white mb-6">CHAMPION DU TOURNOI !</h1>
-              <p class="text-2xl text-white mb-4">Le gagnant est : <span class="text-green-400 font-bold">${data.displayName}</span></p>
-              <div class="text-lg text-white mb-6">
-                Félicitations pour cette victoire !
-              </div>
-              <div class="text-base text-gray-300">Retour au menu principal...</div>
-            </div>
-          `;
-
-          championNotification.classList.remove('hidden');
-
-          // Retourner au menu après 5 secondes
-          setTimeout(() => {
-            championNotification.classList.add('hidden');
-            resetTournamentDisplay(); 
-            unlockNavigation();
-            showView('home'); 
-          }, 5000);
+          if (semi2p2Name && data.bracket.semifinals[1]) {
+            semi2p2Name.textContent = data.bracket.semifinals[1].player2;
+            semi2p2Name.className = 'text-white font-bold text-lg';
+          }
         }
-      };
+        
+        // Mettre à jour la finale si disponible
+        if (data.bracket.final && data.bracket.final.player1 && data.bracket.final.player2) {
+          const finalp1Name = document.getElementById('final-p1-name');
+          const finalp2Name = document.getElementById('final-p2-name');
+          if (finalp1Name) {
+            finalp1Name.textContent = data.bracket.final.player1;
+            finalp1Name.className = 'text-white font-bold text-lg';
+          }
+          if (finalp2Name) {
+            finalp2Name.textContent = data.bracket.final.player2;
+            finalp2Name.className = 'text-white font-bold text-lg';
+          }
+          
+          // Afficher la section finale
+          if (finalSection) {
+            finalSection.classList.remove('hidden');
+          }
+        }
+      }
+      if (data.type === 'match_found') {
+        // Cacher le message temporaire quand un match commence (finale ou autre)
+        hideTemporaryMessage();
+        
+        let blurm_bg = document.getElementById('blurm-bg') as HTMLDivElement;
+        if (blurm_bg) {
+          blurm_bg.classList.add('hidden');
+        }
+        canvas.classList.remove('hidden');
+        pongPlayers?.classList.remove('hidden');
+        playernumber = data.playernumber;
+        
+        // Verrouiller la navigation pendant le tournoi
+        lockNavigation();
+        
+        updateTournamentBracket(data);
+        startTournamentCountdown(3, () => {
+          startPongGame();
+        });
+      }
       ws.onclose = () => {
-        resetTournamentDisplay(); 
-        unlockNavigation(); 
         target.textContent = 'Rejoindre';
         target.removeAttribute('disabled');
       };
@@ -1853,18 +2274,11 @@ if (tournamentSection) {
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
-        
-        // Réinitialiser complètement le canvas
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        canvas.width = 800;
-        canvas.height = 400;
-        
         let paddleY = 150;
         const paddleH = 80;
         const paddleW = 10;
         const height = 400;
         const width = 800;
-        
         function draw() {
           if (!gameState || !ctx) return;
           ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -1912,9 +2326,9 @@ if (tournamentSection) {
         }
         window.addEventListener('keydown', onKey);
       }
+      }; // Fermeture du ws.onmessage
     }
     if (target.id === 'close-tournament-btn') {
-      resetTournamentDisplay();
       tournamentSection.classList.add('hidden');
       showView('home');
     }
@@ -1973,7 +2387,6 @@ async function renderFriendsList() {
   });
 }
 
-// High-level 2FA helper to start and/or enter code using the shared modal
 async function openTwoFAModal(
   opts: { mode: 'setup' | 'enter'; title?: string; desc?: string },
   onConfirm: (code: string) => Promise<boolean>
@@ -1984,13 +2397,10 @@ async function openTwoFAModal(
     ? 'Scannez le QR code puis entrez le code à 6 chiffres.'
     : 'Entrez le code à 6 chiffres de votre application Authenticator.'));
 
-  // Reset UI
   twofaCode.value = '';
   twofaQR.src = '';
-  // Hide QR wrapper when not in setup mode (prevents empty image box on login)
   if (twofaQRWrap) twofaQRWrap.style.display = opts.mode === 'setup' ? '' : 'none';
 
-  // If setup, call /api/2fa/enable to fetch a new QR
   if (opts.mode === 'setup') {
     const r = await fetch('/api/2fa/enable', { method: 'POST', credentials: 'include' });
     if (!r.ok) {
@@ -2002,7 +2412,6 @@ async function openTwoFAModal(
   }
 
   twofaModal.classList.remove('hidden');
-  // focus the code input for faster retry
   setTimeout(() => twofaCode?.focus(), 50);
   const closeModal = () => twofaModal.classList.add('hidden');
   const onCancel = () => closeModal();
@@ -2016,7 +2425,6 @@ async function openTwoFAModal(
     if (ok) closeModal();
     return ok;
   };
-  // Keep handlers active until user cancels or verification succeeds.
   let cleanup: () => void;
 
   return await new Promise<boolean>((resolve) => {
@@ -2032,7 +2440,6 @@ async function openTwoFAModal(
         cleanup();
         resolve(true);
       }
-      // if not ok, do not cleanup so user can retry without reopening modal
     };
 
     cleanup = () => {
@@ -2045,10 +2452,6 @@ async function openTwoFAModal(
   });
 }
 
-// Hook: after login success into home, offer to setup 2FA if user opted during registration.
-// We can also attach a listener to encourage setup from profile later.
-
-// Optional: expose a function to launch setup from elsewhere (e.g., future settings button)
 (window as any).startTwoFASetup = async function() {
   await openTwoFAModal({ mode: 'setup' }, async (code) => {
     const r = await fetch('/api/2fa/verify', {
@@ -2082,12 +2485,16 @@ async function anonymizeMe() {
 }
 
 async function deleteMe() {
-  if (!confirm('Are you sure? This will delete your account.')) return;
+  if (!confirm('Êtes-vous sûr(e) ? Cette action supprimera définitivement votre compte.')) return false;
   const r = await fetch('/api/me', { method: 'DELETE', credentials: 'include' });
-  alert(r.ok ? 'Deleted' : 'Failed');
+  if (r.ok) {
+    alert('Compte supprimé avec succès');
+    return true;
+  } else {
+    alert('Erreur lors de la suppression du compte');
+    return false;
+  }
 }
-
-
 
 async function renderFriendRequests() {
   const container = document.getElementById('friend-requests-list');
@@ -2157,53 +2564,176 @@ function addLogoutButton() {
 
   document.querySelectorAll('#logout-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
-      localStorage.clear();
-      await fetch('/api/logout', { method: 'POST', credentials: 'include' });
-      showView('login');
+      try {
+        localStorage.clear();
+
+        await fetch('/api/logout', { 
+          method: 'POST', 
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+
+        document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+
+        showView('login');
+        
+        console.log('Déconnexion réussie');
+      } catch (error) {
+        console.error('Erreur lors de la déconnexion:', error);
+        localStorage.clear();
+        document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        showView('login');
+      }
     });
   });
 }
 
-window.addEventListener('popstate', (event) => {
-  const view = event.state?.view || 'login';
-  showView(view, false);
+document.addEventListener('DOMContentLoaded', () => {
+  initializeApp();
 });
 
-if (location.pathname === '/register') showView('register', false);
-else if (location.pathname === '/home') showView('home', false);
-else if (location.pathname === '/game') showView('game', false);
-else if (location.pathname === '/profile') showView('profile', false);
-else showView('login', false);
+async function initializeApp() {
+  try {
+    const userId = localStorage.getItem('userId');
 
-const userId = localStorage.getItem('userId');
-await fetch('/api/me', { method: 'GET', credentials: 'include' });
+    let isAuthenticated = false;
+    let userData = null;
+    
+    try {
+      const meRes = await fetch('/api/me', { 
+        method: 'GET', 
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (meRes.ok) {
+        userData = await meRes.json();
+        if (userData && userData.id && userData.email) {
+          isAuthenticated = true;
+          localStorage.setItem('userId', userData.id.toString());
+        } else {
+          console.warn('Données utilisateur invalides reçues du serveur');
+          isAuthenticated = false;
+        }
+      } else if (meRes.status === 401) {
+        localStorage.clear();
+        isAuthenticated = false;
+      } else {
+        console.warn('Erreur inattendue lors de la vérification auth:', meRes.status);
+        isAuthenticated = false;
+      }
+    } catch (networkError) {
+      console.warn('Erreur réseau lors de la vérification auth:', networkError);
+      isAuthenticated = false;
+    }
 
-const canvashome = document.getElementById("home-canvas") as HTMLCanvasElement;
-const canHome = canvashome?.getContext("2d");
-if (!canHome) {
-    throw new Error("Impossible de récupérer le contexte du canvas");
+    if (userId && !isAuthenticated) {
+      console.log('Nettoyage des données de session expirées');
+      localStorage.clear();
+      document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    }
+
+    let targetView: 'login' | 'register' | 'home' | 'game' | 'profile' | 'public-profile' | 'tournament' = 'login';
+    let shouldUpdateUrl = false;
+    
+    if (isAuthenticated && userData) {
+      console.log('Utilisateur authentifié:', userData.displayName);
+      if (location.pathname === '/register') {
+        targetView = 'home';
+        shouldUpdateUrl = true;
+      } else if (location.pathname === '/home') targetView = 'home';
+      else if (location.pathname === '/game') targetView = 'game';
+      else if (location.pathname === '/profile') targetView = 'profile';
+      else if (location.pathname === '/tournament') targetView = 'tournament';
+      else if (location.pathname === '/' || location.pathname === '') {
+        targetView = 'home';
+        shouldUpdateUrl = true;
+      } else {
+        targetView = 'home';
+        shouldUpdateUrl = true;
+      }
+    } else {
+      console.log('Utilisateur non authentifié, redirection vers login');
+      if (location.pathname === '/register') {
+        targetView = 'register';
+      } else if (location.pathname === '/' || location.pathname === '') {
+        targetView = 'login';
+      } else {
+        targetView = 'login';
+        shouldUpdateUrl = true;
+      }
+    }
+
+    initializeEventListeners();
+
+    // Gestionnaire pour la popup de tournoi
+    if (tournamentMatchupPopup) {
+      tournamentMatchupPopup.addEventListener('click', (e) => {
+        // Fermer la popup si on clique sur l'arrière-plan (mais pas pendant un compte à rebours actif)
+        if (e.target === tournamentMatchupPopup && !document.getElementById('countdown-timer')) {
+          tournamentMatchupPopup.classList.add('hidden');
+        }
+      });
+    }
+
+    if (shouldUpdateUrl) {
+      const newUrl = targetView === 'login' ? '/' : `/${targetView}`;
+      history.replaceState({ view: targetView }, '', newUrl);
+    }
+    
+    showView(targetView, false);
+  } catch (error) {
+    console.error('Erreur critique lors de l\'initialisation:', error);
+    localStorage.clear();
+    document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    initializeEventListeners();
+    showView('login', false);
+  }
 }
 
-function drawHomePong() 
-{
-    if (!canHome) return;
-    canHome.clearRect(0, 0, canvashome.width, canvashome.height);
-    canHome.save();
-    canHome.strokeStyle = "white";
-    canHome.setLineDash([10, 10]);
-    canHome.beginPath();
-    canHome.moveTo(canvashome.width / 2, 0);
-    canHome.lineTo(canvashome.width / 2, canvashome.height);
-    canHome.stroke();
-    canHome.setLineDash([]);
-    canHome.restore();
+function initializeCanvas() {
+  const canvashome = document.getElementById("home-canvas") as HTMLCanvasElement;
+  if (!canvashome) {
+    console.warn("Canvas home-canvas non trouvé, probablement pas sur la page d'accueil");
+    return null;
+  }
+  
+  const canHome = canvashome.getContext("2d");
+  if (!canHome) {
+    console.error("Impossible de récupérer le contexte du canvas");
+    return null;
+  }
+  
+  return { canvashome, canHome };
+}
 
-    canHome.fillStyle = "white";
-    canHome.fillRect(20, 80, 10, 60);
-    canHome.fillRect(canvashome.width - 30, 10, 10, 60);
+function drawHomePong() {
+  const canvasData = initializeCanvas();
+  if (!canvasData) return;
+  
+  const { canvashome, canHome } = canvasData;
+  
+  canHome.clearRect(0, 0, canvashome.width, canvashome.height);
+  canHome.save();
+  canHome.strokeStyle = "white";
+  canHome.setLineDash([10, 10]);
+  canHome.beginPath();
+  canHome.moveTo(canvashome.width / 2, 0);
+  canHome.lineTo(canvashome.width / 2, canvashome.height);
+  canHome.stroke();
+  canHome.setLineDash([]);
+  canHome.restore();
 
-    canHome.beginPath();
-    canHome.arc(100, 100, 6, 0, Math.PI * 2);
-    canHome.fillStyle = "white";
-    canHome.fill();
+  canHome.fillStyle = "white";
+  canHome.fillRect(20, 80, 10, 60);
+  canHome.fillRect(canvashome.width - 30, 10, 10, 60);
+
+  canHome.beginPath();
+  canHome.arc(100, 100, 6, 0, Math.PI * 2);
+  canHome.fillStyle = "white";
+  canHome.fill();
 }

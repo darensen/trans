@@ -11,6 +11,7 @@ import fastifyStatic from '@fastify/static';
 const Fastify = require('fastify');
 import fastifyCookie from '@fastify/cookie';
 import fastifySession from '@fastify/session';
+import crypto from 'crypto';
 
 import securityPlugin from './security/security';
 import twofaPlugin from './security/twofa';
@@ -35,6 +36,83 @@ declare module 'fastify' {
 async function main() {
   const app = Fastify();
   const prisma = new PrismaClient();
+  // Cache for shared WS token and TOTP pepper
+  let WS_SHARED_SECRET: string | null = null;
+  let TOTP_PEPPER: Buffer | null = null;
+
+  async function getFromVault(pathEnv: string, defaultPath: string, key: string): Promise<string | null> {
+    const addr = process.env.VAULT_ADDR;
+    const token = process.env.VAULT_TOKEN;
+    const path = process.env[pathEnv] || defaultPath;
+    if (!addr || !token) return null;
+    try {
+      const res = await fetch(`${addr}/${path}`, { headers: { 'X-Vault-Token': token } });
+      if (!res.ok) throw new Error('Vault error');
+      const json = await res.json();
+      return json?.data?.data?.[key] ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  async function loadWsSecret() {
+    WS_SHARED_SECRET = process.env.WS_SHARED_SECRET || process.env.WT_SECRET || await getFromVault('VAULT_WS_PATH', 'v1/secret/data/ws', 'wt_secret');
+    if (WS_SHARED_SECRET) {
+      console.log('[vault] WS shared secret loaded');
+    } else {
+      console.warn('[vault] WS shared secret not configured; /api/matches will accept unauthenticated calls');
+    }
+  }
+
+  async function loadTotpPepper() {
+    const val = process.env.TOTP_SECRET || await getFromVault('VAULT_SECURITY_PATH', 'v1/secret/data/security', 'totp_secret');
+    if (val) {
+      // Derive a 32-byte key from the provided secret
+      TOTP_PEPPER = crypto.createHash('sha256').update(val).digest();
+      console.log('[vault] TOTP pepper loaded');
+    } else {
+      TOTP_PEPPER = null;
+      console.warn('[vault] TOTP secret not set; TOTP secrets stored in plaintext');
+    }
+  }
+
+  // Retry loading TOTP pepper a few times on startup in case Vault is not ready yet
+  (async function retryPepper(attempt = 1) {
+    if (TOTP_PEPPER) return; // already loaded
+    if (attempt > 6) return; // ~30s total
+    await new Promise((r) => setTimeout(r, 5000));
+    await loadTotpPepper();
+    if (!TOTP_PEPPER) retryPepper(attempt + 1);
+  })();
+
+  function encryptTotpSecret(secret: string): string {
+    if (!TOTP_PEPPER) return secret;
+    const iv = crypto.randomBytes(12);
+    const cipher = crypto.createCipheriv('aes-256-gcm', TOTP_PEPPER, iv);
+    const enc = Buffer.concat([cipher.update(secret, 'utf8'), cipher.final()]);
+    const tag = cipher.getAuthTag();
+    return `${iv.toString('base64')}:${tag.toString('base64')}:${enc.toString('base64')}`;
+  }
+
+  function tryDecryptTotpSecret(stored: string | null): string | null {
+    if (!stored) return null;
+    if (!TOTP_PEPPER) return stored; // plaintext mode
+    const parts = stored.split(':');
+    if (parts.length !== 3) return stored; // looks like plaintext
+    try {
+      const [ivB64, tagB64, dataB64] = parts;
+      const iv = Buffer.from(ivB64, 'base64');
+      const tag = Buffer.from(tagB64, 'base64');
+      const data = Buffer.from(dataB64, 'base64');
+      const decipher = crypto.createDecipheriv('aes-256-gcm', TOTP_PEPPER, iv);
+      decipher.setAuthTag(tag);
+      const dec = Buffer.concat([decipher.update(data), decipher.final()]);
+      return dec.toString('utf8');
+    } catch {
+      // fallback to plaintext in case of legacy value
+      return stored;
+    }
+  }
 
   // Ensure avatars directory exists (robust + single source)
   const avatarsDir = path.resolve(process.cwd(), 'srcs/back/avatars');
@@ -45,6 +123,8 @@ async function main() {
     console.error('[startup] Cannot create avatars dir', avatarsDir, e);
   }
 
+  await loadWsSecret();
+  await loadTotpPepper();
   await app.register(securityPlugin);
   await app.register(twofaPlugin);
   await app.register(gdprPlugin);
@@ -100,25 +180,9 @@ async function main() {
       // do not auto-login, ask to login
       reply.send({ id: user.id, email: user.email, displayName: user.displayName });
     } catch (e) {
-      reply.status(400).send({ error: 'Email or display name already used.' });
+      reply.status(400).send({ error: 'Email ou pseudo déjà utilisé.' });
     }
   });
-
-
-//   fastify.post('/api/login', async (req, reply) => {
-//     const { email, password } = req.body as any;
-//     const user = await prisma.user.findUnique({ where: { email } });
-//     if (!user || !(await bcrypt.compare(password, user.password)))
-//       return reply.status(401).send({ error: 'Email ou mot de passe invalide.' });
-//     (req.session as any).userId = user.id;
-//     reply.send({
-//       id: user.id,
-//       email: user.email,
-//       displayName: user.displayName,
-//       avatar: user.avatar ? user.avatar : '/avatars/default.png'
-//     });
-//   });
-
 
   app.post('/api/login', {
     schema: {
@@ -136,37 +200,37 @@ async function main() {
     const { email, password, otp } = req.body;
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user || !(await bcrypt.compare(password, user.password))) {
-      return reply.code(401).send({ error: 'Invalid credentials' });
+      return reply.code(401).send({ error: 'Mauvais email/mot de passe.' });
+    }
+    if (user.deletedAt) {
+      return reply.code(410).send({ error: 'Compte supprimé.' });
     }
 
     if (user.is2FAEnabled) {
       if (!otp) return reply.code(206).send({ need2FA: true }); // ask for OTP
       const { authenticator } = await import('otplib');
-      if (!authenticator.check(otp, user.totpSecret!)) {
-        return reply.code(401).send({ error: 'Invalid OTP' });
+      const plainTotp = tryDecryptTotpSecret(user.totpSecret);
+      if (!plainTotp || !authenticator.check(otp, plainTotp)) {
+        return reply.code(401).send({ error: 'Mauvais code.' });
       }
     }
 
-    const token = app.jwt.sign({ id: user.id, email: user.email });
+  const token = app.jwt.sign({ id: user.id, email: user.email });
     // Safer cookie (JS cannot read it). If you want localStorage instead, return {token}.
     // In production behind HTTPS, set secure cookie
     const isProd = process.env.NODE_ENV === 'production';
+    const maxAge = 12 * 60 * 60 * 1000; // 12 heures en millisecondes
+    
     reply
-      .setCookie('token', token, { httpOnly: true, secure: isProd, sameSite: 'lax', path: '/' })
+      .setCookie('token', token, { 
+        httpOnly: true, 
+        secure: isProd, 
+        sameSite: 'lax', 
+        path: '/',
+        maxAge: maxAge // Expiration explicite du cookie
+      })
       .send({ ok: true });
   });
-
-
-//   fastify.get('/api/me', async (req, reply) => {
-//     const user = await prisma.user.findUnique({ where: { id: req.userId } });
-//     if (!user) return reply.status(404).send({ error: 'Utilisateur non trouvé' });
-//     reply.send({
-//       email: user.email,
-//       displayName: user.displayName,
-//       avatar: user.avatar ? user.avatar : '/avatars/default.png'
-//     });
-//   });
-
 
   app.get('/api/me', { preHandler: (app as any).requireAuth }, async (req: any) => {
     const user = await prisma.user.findUnique({
@@ -420,6 +484,16 @@ app.post('/api/me/avatar', { preHandler: (app as any).requireAuth }, async (req:
 
   // Endpoint pour sauvegarder un match
   app.post('/api/matches', async (req: any, reply: any) => {
+    // If WS secret configured, require matching token header
+    if (WS_SHARED_SECRET === null) {
+      await loadWsSecret();
+    }
+    if (WS_SHARED_SECRET) {
+      const hdr = (req.headers['x-ws-token'] || req.headers['X-WS-Token']) as string | undefined;
+      if (!hdr || hdr !== WS_SHARED_SECRET) {
+        return reply.status(403).send({ error: 'Forbidden' });
+      }
+    }
     const { player1Id, player2Id, player1Score, player2Score, matchType } = req.body as any;
     
     if (!player1Id || !player2Id || player1Score === undefined || player2Score === undefined) {
@@ -429,7 +503,7 @@ app.post('/api/me/avatar', { preHandler: (app as any).requireAuth }, async (req:
     const winnerId = player1Score > player2Score ? parseInt(player1Id) : parseInt(player2Id);
 
     try {
-      const match = await prisma.match.create({
+  const match = await prisma.match.create({
         data: {
           player1Id: parseInt(player1Id),
           player2Id: parseInt(player2Id),
