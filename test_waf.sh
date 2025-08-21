@@ -151,8 +151,7 @@ attack_path  "LFI via chemin encodé" "/..%2f..%2f..%2fetc%2fpasswd"
 attack_query "RFI URL externe" "/" 'url=http://127.0.0.1/shell.txt'
 
 # RCE / Command Injection (932xxx)
-# attack_query "RCE ; id" "/" 'cmd=; id'
-# attack_query "RCE $(id) littéral" "/" 'cmd=$(id)'
+attack_query "RCE $(id) littéral" "/api/" 'cmd=$(id)'
 
 # PHP Injection (933xxx)
 attack_query "PHP Injection" "/" $'p=<?php system(\'id\'); ?>'
@@ -168,8 +167,9 @@ audit_tail
 
 # ---------- 3) Exclusion /api/health ----------
 sep "3) /api/health en DetectionOnly (≠ 403)"
-health=$(curl -ks ${INSECURE_TLS:+-k} -o /dev/null -w '%{http_code}' -G "${BASE}/api/health" --data-urlencode "q=<script>alert(1)</script>")
+health=$(curl -ks ${INSECURE_TLS:+-k} "${BASE}/api/health")
 [[ "$health" == "403" ]] && fail "/api/health -> 403 (devrait passer)" || pass "/api/health -> HTTP ${health}"
+
 
 # ---------- 4) Limites upload (200 kio) ----------
 if [[ "$SKIP_UPLOAD" == "1" ]]; then

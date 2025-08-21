@@ -5,14 +5,14 @@ services:
     cap_add:
       - IPC_LOCK
     environment:
-      - VAULT_DEV_ROOT_TOKEN_ID=myroot
+      - VAULT_DEV_ROOT_TOKEN_ID=${VAULT_TOKEN}
       - VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200
     ports:
       - "8200:8200"
     volumes:
       - ./vault-data:/vault/data
       - ./vault-config:/vault/config
-    command: vault server -dev -dev-root-token-id=myroot
+    command: vault server -dev -dev-root-token-id=${VAULT_TOKEN}
     networks:
       - app-network
 
@@ -43,7 +43,7 @@ services:
     container_name: backend
     environment:
       - VAULT_ADDR=http://vault:8200
-      - VAULT_TOKEN=myroot
+      - VAULT_TOKEN=${VAULT_TOKEN}
       - VAULT_JWT_PATH=v1/secret/data/jwt
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
@@ -74,7 +74,7 @@ services:
       - "0.0.0.0:8081:8081"
     environment:
       - VAULT_ADDR=http://vault:8200
-      - VAULT_TOKEN=myroot
+      - VAULT_TOKEN=${VAULT_TOKEN}
       - VAULT_WS_PATH=v1/secret/data/ws
     depends_on:
       - vault
@@ -92,7 +92,7 @@ services:
       - "8082"
     environment:
       - VAULT_ADDR=http://vault:8200
-      - VAULT_TOKEN=myroot
+      - VAULT_TOKEN=${VAULT_TOKEN}
       - VAULT_WS_PATH=v1/secret/data/ws
     depends_on:
       - vault

@@ -440,30 +440,141 @@
             </div>
           </div>
         </div>
-        <div id="legal-notices-section" class="relative flex flex-col items-center justify-center h-screen bg-black hidden p-8">
-          <div class="bg-gray-900 p-6 rounded shadow-md w-full max-w-4xl border border-gray-700 max-h-[80vh] overflow-y-auto custom-scrollbar">
-            <div class="flex items-center justify-between mb-4">
-              <h2 class="text-2xl text-white font-bold">Mentions légales</h2>
-              <button id="close-legal-notices" class="text-blue-400 hover:underline">Fermer</button>
-            </div>
-            <div class="text-white space-y-4">
-              <p>Contenu des mentions légales à définir...</p>
-            </div>
-          </div>
-        </div>
-        <div id="privacy-policy-section" class="relative flex flex-col items-center justify-center h-screen bg-black hidden p-8">
-          <div class="bg-gray-900 p-6 rounded shadow-md w-full max-w-4xl border border-gray-700 max-h-[80vh] overflow-y-auto custom-scrollbar">
-            <div class="flex items-center justify-between mb-4">
-              <h2 class="text-2xl text-white font-bold">Politiques de confidentialité</h2>
-              <button id="close-privacy-policy" class="text-blue-400 hover:underline">Fermer</button>
-            </div>
-            <div class="text-white space-y-4">
-              <p class = "mt-4 text-blue-400">Contenu des politiques de confidentialité à définir...</p>
-            </div>
-          </div>
         </div>
     </div>
 </div>
+
+<!-- Section des mentions légales - indépendante -->
+<div id="legal-notices-section" class="relative flex flex-col items-center justify-center h-screen bg-black hidden p-8">
+  <div class="bg-gray-900 p-6 rounded shadow-md w-full max-w-4xl border border-gray-700 max-h-[80vh] overflow-y-auto custom-scrollbar">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-2xl text-white font-bold">Mentions légales</h2>
+      <button id="close-legal-notices" class="text-blue-400 hover:underline">Fermer</button>
+    </div>
+    <div class="text-white space-y-4">
+      <div class="space-y-6">
+        <section>
+          <h3 class="text-xl font-semibold text-blue-400 mb-3">Éditeur du site</h3>
+          <p>Ce site est édité dans le cadre d'un projet scolaire.</p>
+          <p><strong>Responsables de publication :</strong> Killian LE RESTE, Daren SENATUS, Lucas SEZETTRE, Alexandru MIHAI COSTIN</p>
+          <p><strong>Adresse :</strong> 96 Boulevard Bessières, 75017 PARIS.</p>
+          <p><strong>E-mail :</strong> kle-rest@student.42.fr, dsenatus@student.42.fr, lusezett@student.42.fr, acostin@student.42.fr</p>
+        </section>
+
+        <section>
+          <h3 class="text-xl font-semibold text-blue-400 mb-3">Hébergeur</h3>
+          <p><strong>Nom de l'hébergeur :</strong> École 42</p>
+          <p><strong>Adresse :</strong> 96 Boulevard Bessières, 75017 PARIS.</p>
+          <p><strong>Téléphone :</strong> 06 84 25 74 95 (Numéro fictif)</p>
+        </section>
+
+        <section>
+          <h3 class="text-xl font-semibold text-blue-400 mb-3">Propriété intellectuelle</h3>
+          <p>Les éléments du site (textes, images, code) sont destinés à un usage pédagogique et ne peuvent être réutilisés à des fins commerciales sans autorisation.</p>
+          <p>Ce projet a été développé dans le cadre de la formation à l'École 42 et reste la propriété intellectuelle de ses créateurs.</p>
+        </section>
+
+        <section>
+          <h3 class="text-xl font-semibold text-blue-400 mb-3">Conditions d'utilisation</h3>
+          <p>L'utilisation de ce site implique l'acceptation pleine et entière des conditions générales d'utilisation décrites ci-après.</p>
+          <p>Ces conditions d'utilisation sont susceptibles d'être modifiées ou complétées à tout moment.</p>
+        </section>
+
+        <section>
+          <h3 class="text-xl font-semibold text-blue-400 mb-3">Responsabilité</h3>
+          <p>Les informations contenues sur ce site sont aussi précises que possibles et le site remis à jour à différentes périodes de l'année.</p>
+          <p>Cependant, il se peut que des imprécisions ou des omissions soient présentes. N'hésitez pas à nous signaler tout contenu erroné.</p>
+          <p>L'utilisation des informations et contenus disponibles sur l'ensemble du site ne saurait en aucun cas engager la responsabilité des créateurs du site.</p>
+        </section>
+
+        <section>
+          <h3 class="text-xl font-semibold text-blue-400 mb-3">Contact</h3>
+          <p>Pour toute question concernant ces mentions légales, vous pouvez nous contacter à l'une des adresses e-mail mentionnées ci-dessus.</p>
+        </section>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Section des politiques de confidentialité - indépendante -->
+<div id="privacy-policy-section" class="relative flex flex-col items-center justify-center h-screen bg-black hidden p-8">
+  <div class="bg-gray-900 p-6 rounded shadow-md w-full max-w-4xl border border-gray-700 max-h-[80vh] overflow-y-auto custom-scrollbar">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-2xl text-white font-bold">Politiques de confidentialité</h2>
+      <button id="close-privacy-policy" class="text-blue-400 hover:underline">Fermer</button>
+    </div>
+    <div class="text-white space-y-4">
+      <div class="space-y-6">
+        <section>
+          <h3 class="text-xl font-semibold text-blue-400 mb-3">Collecte des informations</h3>
+          <p>Nous recueillons des informations lorsque vous vous inscrivez sur notre site, vous connectez à votre compte, ou participez à une partie de Pong.</p>
+          <p>Les informations recueillies incluent votre nom, votre adresse e-mail, votre pseudo, votre avatar et vos statistiques de jeu.</p>
+        </section>
+
+        <section>
+          <h3 class="text-xl font-semibold text-blue-400 mb-3">Utilisation des informations</h3>
+          <p>Les informations que nous recueillons auprès de vous peuvent être utilisées pour :</p>
+          <ul class="list-disc list-inside ml-4 space-y-1">
+            <li>Personnaliser votre expérience et répondre à vos besoins individuels</li>
+            <li>Fournir un contenu publicitaire personnalisé</li>
+            <li>Améliorer le service client et vos besoins de prise en charge</li>
+            <li>Vous contacter par e-mail si nécessaire</li>
+            <li>Administrer un concours, une promotion, ou une enquête</li>
+            <li>Gérer les statistiques de jeu et les classements</li>
+          </ul>
+        </section>
+
+        <section>
+          <h3 class="text-xl font-semibold text-blue-400 mb-3">Confidentialité du commerce électronique</h3>
+          <p>Nous sommes les seuls propriétaires des informations recueillies sur ce site. Vos informations personnelles ne seront pas vendues, échangées, transférées, ou données à une autre société pour n'importe quelle raison, sans votre consentement, en dehors de ce qui est nécessaire pour répondre à une demande et/ou une transaction.</p>
+        </section>
+
+        <section>
+          <h3 class="text-xl font-semibold text-blue-400 mb-3">Divulgation à des tiers</h3>
+          <p>Nous ne vendons, n'échangeons et ne transférons pas vos informations personnelles identifiables à des tiers. Cela ne comprend pas les tierce parties de confiance qui nous aident à exploiter notre site Web ou à mener nos affaires, tant que ces parties conviennent de garder ces informations confidentielles.</p>
+        </section>
+
+        <section>
+          <h3 class="text-xl font-semibold text-blue-400 mb-3">Protection des informations</h3>
+          <p>Nous mettons en œuvre une variété de mesures de sécurité pour préserver la sécurité de vos informations personnelles. Nous utilisons un cryptage à la pointe de la technologie pour protéger les informations sensibles transmises en ligne.</p>
+          <p>Les mots de passe sont chiffrés et les données sensibles sont stockées de manière sécurisée.</p>
+        </section>
+
+        <section>
+          <h3 class="text-xl font-semibold text-blue-400 mb-3">Cookies</h3>
+          <p>Nous utilisons des cookies pour améliorer votre expérience utilisateur, maintenir votre session de connexion et personnaliser votre expérience de jeu.</p>
+          <p>Les cookies sont de petits fichiers qu'un site ou son fournisseur de services transfère sur le disque dur de votre ordinateur par l'intermédiaire de votre navigateur Web (si vous le permettez).</p>
+        </section>
+
+        <section>
+          <h3 class="text-xl font-semibold text-blue-400 mb-3">Consentement</h3>
+          <p>En utilisant notre site, vous consentez à notre politique de confidentialité.</p>
+        </section>
+
+        <section>
+          <h3 class="text-xl font-semibold text-blue-400 mb-3">Vos droits GDPR</h3>
+          <p>Conformément au Règlement Général sur la Protection des Données (GDPR), vous disposez des droits suivants :</p>
+          <ul class="list-disc list-inside ml-4 space-y-1">
+            <li>Droit d'accès à vos données personnelles</li>
+            <li>Droit de rectification de vos données</li>
+            <li>Droit à l'effacement (droit à l'oubli)</li>
+            <li>Droit à la portabilité des données</li>
+            <li>Droit d'opposition au traitement</li>
+            <li>Droit à l'anonymisation de votre compte</li>
+          </ul>
+          <p class="mt-2">Vous pouvez exercer ces droits depuis votre profil utilisateur ou en nous contactant directement.</p>
+        </section>
+
+        <section>
+          <h3 class="text-xl font-semibold text-blue-400 mb-3">Contact</h3>
+          <p>Si vous avez des questions concernant cette politique de confidentialité, vous pouvez nous contacter à :</p>
+          <p><strong>E-mail :</strong> kle-rest@student.42.fr, dsenatus@student.42.fr, lusezett@student.42.fr, acostin@student.42.fr</p>
+        </section>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script type="module" src="main.js"></script>
 <div id="twofa-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center">
   <div class="bg-white w-96 max-w-[95vw] rounded shadow-lg p-5">

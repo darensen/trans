@@ -59,12 +59,12 @@ const pongPlayers = document.getElementById('pong-players') as HTMLDivElement | 
 const tournoisBtn = document.getElementById('tournois-button') as HTMLButtonElement | null;
 const localGameBtn = document.getElementById('local-game-button') as HTMLButtonElement | null;
 const legalNoticesSection = document.getElementById('legal-notices-section') as HTMLDivElement | null;
-const privacyPolicySection = document.getElementById('privacy-policy-section') as HTMLDivElement | null;
 const legalNoticesLink = document.getElementById('legal-notices-link') as HTMLAnchorElement | null;
-const privacyPolicyLink = document.getElementById('privacy-policy-link') as HTMLAnchorElement | null;
 const homeLegalNoticesLink = document.getElementById('home-legal-notices-link') as HTMLAnchorElement | null;
-const homePrivacyPolicyLink = document.getElementById('home-privacy-policy-link') as HTMLAnchorElement | null;
 const closeLegalNoticesBtn = document.getElementById('close-legal-notices') as HTMLButtonElement | null;
+const privacyPolicySection = document.getElementById('privacy-policy-section') as HTMLDivElement | null;
+const privacyPolicyLink = document.getElementById('privacy-policy-link') as HTMLAnchorElement | null;
+const homePrivacyPolicyLink = document.getElementById('home-privacy-policy-link') as HTMLAnchorElement | null;
 const closePrivacyPolicyBtn = document.getElementById('close-privacy-policy') as HTMLButtonElement | null;
 
 let pingInterval: number | undefined;
@@ -72,6 +72,9 @@ let currentPublicUserId: number | null = null;
 
 // Variable pour tracker si on est en jeu
 let isGameActive = false;
+
+// Variable pour tracker la page précédente
+let previousView: 'login' | 'register' | 'home' | 'game' | 'profile' | 'public-profile' | 'tournament' | 'legal-notices' | 'privacy-policy' = 'login';
 
 let winLossChart: any = null;
 let matchTypesChart: any = null;
@@ -290,6 +293,11 @@ async function loadUserDataInNavbar() {
 }
 
 function showView(view: 'login' | 'register' | 'home' | 'game' | 'profile' | 'public-profile' | 'tournament' | 'legal-notices' | 'privacy-policy', push = true, publicUser?: any) {
+  // Sauvegarder l'état précédent seulement si ce n'est pas une page modale (legal-notices ou privacy-policy)
+  if (view !== 'legal-notices' && view !== 'privacy-policy') {
+    previousView = view;
+  }
+  
   loginForm.classList.add('hidden');
   registerForm.classList.add('hidden');
   homeSection.classList.add('hidden');
@@ -1218,19 +1226,27 @@ function initializeEventListeners() {
     });
   }
 
-  if (privacyPolicyLink && !privacyPolicyLink.hasAttribute('data-listener-added')) {
-    privacyPolicyLink.setAttribute('data-listener-added', 'true');
-    privacyPolicyLink.addEventListener('click', (e) => {
-      e.preventDefault();
-      showView('privacy-policy');
-    });
-  }
-
   if (homeLegalNoticesLink && !homeLegalNoticesLink.hasAttribute('data-listener-added')) {
     homeLegalNoticesLink.setAttribute('data-listener-added', 'true');
     homeLegalNoticesLink.addEventListener('click', (e) => {
       e.preventDefault();
       showView('legal-notices');
+    });
+  }
+
+  if (closeLegalNoticesBtn && !closeLegalNoticesBtn.hasAttribute('data-listener-added')) {
+    closeLegalNoticesBtn.setAttribute('data-listener-added', 'true');
+    closeLegalNoticesBtn.addEventListener('click', () => {
+      // Utiliser la page précédente sauvegardée
+      showView(previousView);
+    });
+  }
+
+  if (privacyPolicyLink && !privacyPolicyLink.hasAttribute('data-listener-added')) {
+    privacyPolicyLink.setAttribute('data-listener-added', 'true');
+    privacyPolicyLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      showView('privacy-policy');
     });
   }
 
@@ -1242,19 +1258,11 @@ function initializeEventListeners() {
     });
   }
 
-  if (closeLegalNoticesBtn && !closeLegalNoticesBtn.hasAttribute('data-listener-added')) {
-    closeLegalNoticesBtn.setAttribute('data-listener-added', 'true');
-    closeLegalNoticesBtn.addEventListener('click', () => {
-      const currentPage = log_page?.classList.contains('hidden') ? 'home' : 'register';
-      showView(currentPage);
-    });
-  }
-
   if (closePrivacyPolicyBtn && !closePrivacyPolicyBtn.hasAttribute('data-listener-added')) {
     closePrivacyPolicyBtn.setAttribute('data-listener-added', 'true');
     closePrivacyPolicyBtn.addEventListener('click', () => {
-      const currentPage = log_page?.classList.contains('hidden') ? 'home' : 'register';
-      showView(currentPage);
+      // Utiliser la page précédente sauvegardée
+      showView(previousView);
     });
   }
 

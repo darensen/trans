@@ -1,35 +1,52 @@
-#!/bin/bash
+# #!/bin/bash
+set -euo pipefail
 
-# Wait for Vault to be ready
-echo "Waiting for Vault container to be ready..."
-sleep 7
+VAULT_CONTAINER_NAME="${VAULT_CONTAINER_NAME:-vault}"
+ENV_FILE="${ENV_FILE:-.env}"
 
-# Check if vault container is running
-if ! docker ps | grep -q "vault"; then
-    echo "Error: Vault container is not running. Please run 'make' or 'docker-compose up -d' first."
-    exit 1
+echo "[init-vault] Loading env from ${ENV_FILE} (if present)"
+if [ -f "$ENV_FILE" ]; then
+  set -a
+  # charge uniquement les lignes KEY=VALUE sans commentaires
+  grep -E '^[A-Za-z_][A-Za-z0-9_]*=' "$ENV_FILE" > /tmp/.init-vault.env || true
+  . /tmp/.init-vault.env
+  set +a
 fi
 
-echo "Initializing Vault secrets..."
+# Sanity checks
+for v in VAULT_ADDR VAULT_TOKEN JWT_SECRET WS_SECRET TOTP_PEPPER; do
+  if [ -z "${!v:-}" ]; then
+    echo "[init-vault] ERROR: $v is empty. Check your .env"
+    exit 1
+  fi
+done
 
-# Run vault commands inside the container
-docker exec vault /bin/sh -c "
-export VAULT_ADDR='http://localhost:8200'
-export VAULT_TOKEN='myroot'
+echo "[init-vault] Waiting for Vault container to be ready..."
+sleep 7
 
-# Enable secrets engine (ignore error if already enabled)
-vault secrets enable -path=secret kv-v2 2>/dev/null || echo 'Secret engine already enabled'
+if ! docker ps --format '{{.Names}}' | grep -qx "$VAULT_CONTAINER_NAME"; then
+  echo "[init-vault] Error: container '$VAULT_CONTAINER_NAME' not running."
+  exit 1
+fi
 
-# Store JWT secret
-vault kv put secret/jwt secret='your-super-secure-jwt-secret-key-change-in-production'
+echo "[init-vault] Writing secrets to Vault (${VAULT_ADDR})"
 
-# Store WebSocket shared secret (for ws->backend calls)
-vault kv put secret/ws wt_secret='dev-ws-shared-token-change'
+docker exec \
+  -e VAULT_ADDR="$VAULT_ADDR" \
+  -e VAULT_TOKEN="$VAULT_TOKEN" \
+  -e JWT_SECRET="$JWT_SECRET" \
+  -e WS_SECRET="$WS_SECRET" \
+  -e TOTP_PEPPER="$TOTP_PEPPER" \
+  "$VAULT_CONTAINER_NAME" /bin/sh -lc '
+set -e
+vault secrets enable -path=secret kv-v2 2>/dev/null || echo "[vault] KV already enabled"
 
-# Store security secrets (e.g., TOTP pepper)
-vault kv put secret/security totp_secret='dev-totp-pepper-change'
+vault kv put secret/jwt      secret="$JWT_SECRET"
+vault kv put secret/ws       wt_secret="$WS_SECRET"
+# on stocke le pepper sous la clé "totp_secret" (comme avant)
+vault kv put secret/security totp_secret="$TOTP_PEPPER"
 
-echo 'All secrets stored successfully'
-"
+echo "[vault] Secrets stored"
+'
 
-echo "Vault initialized with JWT secret"
+echo "[init-vault] Done."
