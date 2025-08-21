@@ -16,6 +16,41 @@ services:
     networks:
       - app-network
 
+  vault-init:
+    image: vault:1.13.3
+    container_name: vault-init
+    environment:
+      - VAULT_ADDR=http://vault:8200
+      - VAULT_TOKEN=${VAULT_TOKEN}
+      - JWT_SECRET=${JWT_SECRET:-}
+      - WS_SECRET=${WS_SECRET:-}
+      - TOTP_PEPPER=${TOTP_PEPPER:-}
+    volumes:
+      - ./init-vault.sh:/init-vault.sh
+    command: >
+      sh -c "sleep 10 && 
+             chmod +x /init-vault.sh && 
+             /init-vault.sh && 
+             echo 'Vault initialization complete'"
+    depends_on:
+      - vault
+    networks:
+      - app-network
+
+  frontend:
+    image: node:20
+    container_name: frontend
+    working_dir: /app
+    volumes:
+      - ./srcs/front:/app
+    command: >
+      sh -c "npm install && 
+             npm install typescript && 
+             npx tsc && 
+             echo 'Frontend build complete'"
+    networks:
+      - app-network
+
   nginx:
     build: 
       context: ./srcs
@@ -28,9 +63,10 @@ services:
       - "0.0.0.0:8443:443"
     depends_on:
       - backend
+      - frontend
+      - vault-init
       - websocket-pong
       - websocket-tournament
-      - vault
     networks:
       - app-network
     volumes:

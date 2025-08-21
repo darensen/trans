@@ -1,52 +1,52 @@
-# #!/bin/bash
-set -euo pipefail
+#!/bin/sh
+set -e
 
-VAULT_CONTAINER_NAME="${VAULT_CONTAINER_NAME:-vault}"
-ENV_FILE="${ENV_FILE:-.env}"
+echo "[init-vault] Starting Vault initialization..."
 
-echo "[init-vault] Loading env from ${ENV_FILE} (if present)"
-if [ -f "$ENV_FILE" ]; then
-  set -a
-  # charge uniquement les lignes KEY=VALUE sans commentaires
-  grep -E '^[A-Za-z_][A-Za-z0-9_]*=' "$ENV_FILE" > /tmp/.init-vault.env || true
-  . /tmp/.init-vault.env
-  set +a
+# Vérifier que les variables d'environnement sont définies
+if [ -z "$VAULT_ADDR" ]; then
+    echo "[init-vault] ERROR: VAULT_ADDR is not set"
+    exit 1
 fi
 
-# Sanity checks
-for v in VAULT_ADDR VAULT_TOKEN JWT_SECRET WS_SECRET TOTP_PEPPER; do
-  if [ -z "${!v:-}" ]; then
-    echo "[init-vault] ERROR: $v is empty. Check your .env"
+if [ -z "$VAULT_TOKEN" ]; then
+    echo "[init-vault] ERROR: VAULT_TOKEN is not set"
     exit 1
-  fi
+fi
+
+echo "[init-vault] Waiting for Vault to be ready..."
+# Attendre que Vault soit prêt
+max_attempts=30
+attempt=0
+while [ $attempt -lt $max_attempts ]; do
+    if vault status > /dev/null 2>&1; then
+        echo "[init-vault] Vault is ready!"
+        break
+    fi
+    echo "[init-vault] Waiting for Vault... (attempt $((attempt + 1))/$max_attempts)"
+    sleep 2
+    attempt=$((attempt + 1))
 done
 
-echo "[init-vault] Waiting for Vault container to be ready..."
-sleep 7
-
-if ! docker ps --format '{{.Names}}' | grep -qx "$VAULT_CONTAINER_NAME"; then
-  echo "[init-vault] Error: container '$VAULT_CONTAINER_NAME' not running."
-  exit 1
+if [ $attempt -eq $max_attempts ]; then
+    echo "[init-vault] ERROR: Vault did not become ready in time"
+    exit 1
 fi
 
-echo "[init-vault] Writing secrets to Vault (${VAULT_ADDR})"
+echo "[init-vault] Enabling KV secrets engine..."
+vault secrets enable -path=secret kv-v2 2>/dev/null || echo "[init-vault] KV already enabled"
 
-docker exec \
-  -e VAULT_ADDR="$VAULT_ADDR" \
-  -e VAULT_TOKEN="$VAULT_TOKEN" \
-  -e JWT_SECRET="$JWT_SECRET" \
-  -e WS_SECRET="$WS_SECRET" \
-  -e TOTP_PEPPER="$TOTP_PEPPER" \
-  "$VAULT_CONTAINER_NAME" /bin/sh -lc '
-set -e
-vault secrets enable -path=secret kv-v2 2>/dev/null || echo "[vault] KV already enabled"
+echo "[init-vault] Writing secrets to Vault..."
 
-vault kv put secret/jwt      secret="$JWT_SECRET"
-vault kv put secret/ws       wt_secret="$WS_SECRET"
-# on stocke le pepper sous la clé "totp_secret" (comme avant)
+# Générer des secrets par défaut si pas fournis
+JWT_SECRET="${JWT_SECRET:-$(openssl rand -hex 32)}"
+WS_SECRET="${WS_SECRET:-$(openssl rand -hex 32)}"
+TOTP_PEPPER="${TOTP_PEPPER:-$(openssl rand -hex 32)}"
+
+# Stocker les secrets
+vault kv put secret/jwt secret="$JWT_SECRET"
+vault kv put secret/ws wt_secret="$WS_SECRET"
 vault kv put secret/security totp_secret="$TOTP_PEPPER"
 
-echo "[vault] Secrets stored"
-'
-
+echo "[init-vault] Secrets stored successfully!"
 echo "[init-vault] Done."

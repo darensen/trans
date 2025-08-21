@@ -1,9 +1,14 @@
 FRONT_DIR=srcs/front
 BACK_DIR=srcs/back
 
-.PHONY: all front back docker build up clean re
+.PHONY: all simple docker build up clean re
 
-all: front back
+# Version simple avec Docker seulement
+all:
+	docker compose up --build
+
+# Version avec build manuel (pour développement)
+build-manual: front back
 	# Ensure Vault is up, seed dev secrets, then start the full stack
 	docker compose up -d vault
 	bash ./init-vault.sh
